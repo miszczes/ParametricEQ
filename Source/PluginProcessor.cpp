@@ -166,7 +166,8 @@ bool ParametricEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* ParametricEQAudioProcessor::createEditor()
 {
-    return new ParametricEQAudioProcessorEditor (*this);
+    //return new ParametricEQAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -181,6 +182,27 @@ void ParametricEQAudioProcessor::setStateInformation (const void* data, int size
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout
+    ParametricEQAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq", 
+                                                           "Band1 Freq",
+                                                            juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f),
+                                                            100.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
+                                                            "Band1 Wzmocnienie",
+                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+                                                            0.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Q",
+                                                            "Band1 Q",
+                                                            juce::NormalisableRange<float>(0.1f, 10.f, 0.5f, 1.f),
+                                                            1.f));
+
+    return layout;
 }
 
 //==============================================================================
