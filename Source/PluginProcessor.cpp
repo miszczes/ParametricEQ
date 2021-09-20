@@ -103,6 +103,14 @@ void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     leftCh.prepare(spec);
     rightCh.prepare(spec);
 
+    auto chainSettings = getChainSettings(apvts);
+    auto Band1Coeff = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+                                                                        chainSettings.Band1Freq,
+                                                                        chainSettings.Band1Q,
+                                                                        juce::Decibels::decibelsToGain(chainSettings.Band1GainToDB));
+    *leftCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
+    *rightCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
+
 }
 
 void ParametricEQAudioProcessor::releaseResources()
@@ -152,6 +160,14 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    auto chainSettings = getChainSettings(apvts);
+    auto Band1Coeff = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
+                                                                        chainSettings.Band1Freq,
+                                                                        chainSettings.Band1Q,
+                                                                        juce::Decibels::decibelsToGain(chainSettings.Band1GainToDB));
+    *leftCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
+    *rightCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
+
     juce::dsp::AudioBlock<float> block(buffer);
 
     auto leftBlock = block.getSingleChannelBlock(0);
@@ -189,6 +205,16 @@ void ParametricEQAudioProcessor::setStateInformation (const void* data, int size
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
+{
+    ChainSettings ustawienia;
+
+    ustawienia.Band1Freq = apvts.getRawParameterValue("Band1 Freq")->load();
+    ustawienia.Band1GainToDB = apvts.getRawParameterValue("Band1 Wzmocnienie")->load();
+    ustawienia.Band1Q = apvts.getRawParameterValue("Band1 Q")->load();
+
+    return ustawienia;
+}
 
 juce::AudioProcessorValueTreeState::ParameterLayout
     ParametricEQAudioProcessor::createParameterLayout()
@@ -197,15 +223,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq", 
                                                            "Band1 Freq",
-                                                            juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f),
+                                                            juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
                                                             100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
                                                             "Band1 Wzmocnienie",
-                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, .25f),
                                                             0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Q",
                                                             "Band1 Q",
-                                                            juce::NormalisableRange<float>(0.1f, 10.f, 0.5f, 1.f),
+                                                            juce::NormalisableRange<float>(0.1f, 10.f, 0.5f, .25f),
                                                             1.f));
 
     return layout;

@@ -9,6 +9,13 @@
 #pragma once
 
 #include <JuceHeader.h>
+struct ChainSettings
+{
+    float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1Q{ 1.f };
+
+};
+
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
 
 //==============================================================================
 /**
@@ -63,6 +70,12 @@ private:
     using Mono = juce::dsp::ProcessorChain<Band>;
 
     Mono leftCh, rightCh;
+
+
+    enum chainPos
+    {
+        Band1,
+    };
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametricEQAudioProcessor)
 };
