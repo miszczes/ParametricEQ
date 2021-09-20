@@ -53,11 +53,16 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    static juce::AudioProcessorValueTreeState::ParameterLayout
-        createParameterLayout();
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::AudioProcessorValueTreeState apvts{ *this, nullptr, "Parametry", createParameterLayout() };
 
 private:
+
+    using Band = juce::dsp::IIR::Filter<float>;
+
+    using Mono = juce::dsp::ProcessorChain<Band>;
+
+    Mono leftCh, rightCh;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametricEQAudioProcessor)
 };
