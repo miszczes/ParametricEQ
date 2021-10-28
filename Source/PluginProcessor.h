@@ -20,6 +20,12 @@ struct ChainSettings
 
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
 
+using Band = juce::dsp::IIR::Filter<float>;
+
+using Mono = juce::dsp::ProcessorChain<Band, Band>;
+
+Mono leftCh, rightCh;
+
 //==============================================================================
 /**
 */
@@ -72,11 +78,7 @@ private:
     float beta = 0;
     float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
-    using Band = juce::dsp::IIR::Filter<float>;
 
-    using Mono = juce::dsp::ProcessorChain<Band, Band>;
-
-    Mono leftCh, rightCh;
 
 
     enum chainPos
