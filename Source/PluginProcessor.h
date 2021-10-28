@@ -10,8 +10,7 @@
 
 #include <JuceHeader.h>
 
-float beta = 0;
-float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
+
 struct ChainSettings
 {
     float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1BW{ 1.f }, Band1BWGain{ 0 }, Band1GainRef{ 0 };
@@ -69,6 +68,9 @@ public:
     juce::AudioProcessorValueTreeState apvts{ *this, nullptr, "Parametry", createParameterLayout() };
 
 private:
+
+    float beta = 0;
+    float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
     using Band = juce::dsp::IIR::Filter<float>;
 
