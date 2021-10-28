@@ -9,9 +9,13 @@
 #pragma once
 
 #include <JuceHeader.h>
+
+float beta = 0;
+float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 struct ChainSettings
 {
-    float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1Q{ 1.f };
+    float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1BW{ 1.f }, Band1BWGain{ 0 }, Band1GainRef{ 0 };
+    float Band2Freq{ 0 }, Band2GainToDB{ 0 }, Band2BW{ 1.f }, Band2BWGain{ 0 }, Band2GainRef{ 0 };
 
 };
 
@@ -28,6 +32,7 @@ public:
     ~ParametricEQAudioProcessor() override;
 
     //==============================================================================
+
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
@@ -67,7 +72,7 @@ private:
 
     using Band = juce::dsp::IIR::Filter<float>;
 
-    using Mono = juce::dsp::ProcessorChain<Band>;
+    using Mono = juce::dsp::ProcessorChain<Band, Band>;
 
     Mono leftCh, rightCh;
 
@@ -75,7 +80,12 @@ private:
     enum chainPos
     {
         Band1,
+        Band2
     };
+
+    void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
+
+    void updateFilters();
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametricEQAudioProcessor)
 };

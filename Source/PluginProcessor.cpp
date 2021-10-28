@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#define PI 3.14159265
+
 //==============================================================================
 ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -91,6 +93,51 @@ void ParametricEQAudioProcessor::changeProgramName (int index, const juce::Strin
 }
 
 //==============================================================================
+void ParametricEQAudioProcessor::generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index)
+{
+    if (fs > 0) {
+
+        beta = tan(Bf / 2 * PI / (fs / 2)) * sqrt(abs(pow(pow(10, GB / 20), 2) - pow(pow(10, G0 / 20), 2))) / sqrt(abs(pow(pow(10, G / 20), 2) - pow(pow(10, GB / 20), 2)));
+        b0 = (pow(10, G0 / 20) + pow(10, G / 20) * beta) / (1 + beta);
+        b1 = -2 * pow(10, G0 / 20) * cos(f0 * PI / (fs / 2)) / (1 + beta);
+        b2 = (pow(10, G0 / 20) - pow(10, G / 20) * beta) / (1 + beta);
+
+        a0 = 1;
+        a1 = -2 * cos(f0 * PI / (fs / 2)) / (1 + beta);
+        a2 = (1 - beta) / (1 + beta);
+
+
+    }
+
+    juce::dsp::IIR::Coefficients<float>::Ptr coeffs(new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2));
+    if (coeffs)
+    {
+        if (index == 0)
+        {
+            *leftCh.get<0>().coefficients = *coeffs;
+            *rightCh.get<0>().coefficients = *coeffs;
+        }
+        else if (index == 1)
+        {
+            *leftCh.get<1>().coefficients = *coeffs;
+            *rightCh.get<1>().coefficients = *coeffs;
+        }
+    }
+}
+void ParametricEQAudioProcessor::updateFilters()
+{
+
+    auto chainSettings = getChainSettings(apvts);
+
+    for (size_t i = 0; i < 2; i++) {
+        if (i == 0)
+            generujWspolczynniki(getSampleRate(), chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i);
+        else if (i == 1)
+            generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
+    }
+
+}
+
 void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
@@ -102,14 +149,9 @@ void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
 
     leftCh.prepare(spec);
     rightCh.prepare(spec);
+    
+    updateFilters();
 
-    auto chainSettings = getChainSettings(apvts);
-    auto Band1Coeff = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
-                                                                        chainSettings.Band1Freq,
-                                                                        chainSettings.Band1Q,
-                                                                        juce::Decibels::decibelsToGain(chainSettings.Band1GainToDB));
-    *leftCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
-    *rightCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
 
 }
 
@@ -145,6 +187,7 @@ bool ParametricEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 }
 #endif
 
+
 void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -160,13 +203,7 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    auto chainSettings = getChainSettings(apvts);
-    auto Band1Coeff = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
-                                                                        chainSettings.Band1Freq,
-                                                                        chainSettings.Band1Q,
-                                                                        juce::Decibels::decibelsToGain(chainSettings.Band1GainToDB));
-    *leftCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
-    *rightCh.get<chainPos::Band1>().coefficients = *Band1Coeff;
+    updateFilters();
 
     juce::dsp::AudioBlock<float> block(buffer);
 
@@ -211,7 +248,16 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
 
     ustawienia.Band1Freq = apvts.getRawParameterValue("Band1 Freq")->load();
     ustawienia.Band1GainToDB = apvts.getRawParameterValue("Band1 Wzmocnienie")->load();
-    ustawienia.Band1Q = apvts.getRawParameterValue("Band1 Q")->load();
+    ustawienia.Band1BW = apvts.getRawParameterValue("Band1 BW")->load();
+    ustawienia.Band1BWGain = apvts.getRawParameterValue("Band1 BW Gain")->load();
+    ustawienia.Band1GainRef = apvts.getRawParameterValue("Band1 Reference")->load();
+
+    ustawienia.Band2Freq = apvts.getRawParameterValue("Band2 Freq")->load();
+    ustawienia.Band2GainToDB = apvts.getRawParameterValue("Band2 Wzmocnienie")->load();
+    ustawienia.Band2BW = apvts.getRawParameterValue("Band2 BW")->load();
+    ustawienia.Band2BWGain = apvts.getRawParameterValue("Band2 BW Gain")->load();
+    ustawienia.Band2GainRef = apvts.getRawParameterValue("Band2 Reference")->load();
+
 
     return ustawienia;
 }
@@ -221,18 +267,47 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq", 
-                                                           "Band1 Freq",
-                                                            juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
-                                                            100.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq",
+        "Band1 Freq",
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
-                                                            "Band1 Wzmocnienie",
-                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, .25f),
-                                                            0.f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Q",
-                                                            "Band1 Q",
-                                                            juce::NormalisableRange<float>(0.1f, 10.f, 0.5f, .25f),
-                                                            1.f));
+        "Band1 Wzmocnienie",
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        0.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 BW",
+        "Band1 BW",
+        juce::NormalisableRange<float>(100.f, 1000.f, 0.5f, 1.f),
+        100.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 BW Gain",
+        "Band1 BW Gain",
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
+        0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Reference",
+        "Band1 Reference",
+        juce::NormalisableRange<float>(-2.f, 2.f, 0.01f, 1.f),
+        0.f));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Freq",
+        "Band2 Freq",
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Wzmocnienie",
+        "Band2 Wzmocnienie",
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        0.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW",
+        "Band2 BW",
+        juce::NormalisableRange<float>(100.f, 1000.f, 0.5f, 1.f),
+        100.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW Gain",
+        "Band2 BW Gain",
+        juce::NormalisableRange<float>(0.f, 12.f, 0.5f, 1.f),
+        0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Reference",
+        "Band2 Reference",
+        juce::NormalisableRange<float>(-2.f, 2.f, 0.5f, 1.f),
+        0.f));
 
     return layout;
 }
