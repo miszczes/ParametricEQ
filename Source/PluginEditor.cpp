@@ -11,7 +11,17 @@
 
 //==============================================================================
 ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p),
+    Band1f0Attachment(audioProcessor.apvts, "Band1 Freq",Band1f0),
+    Band1GAttachment(audioProcessor.apvts, "Band1 Wzmocnienie", Band1G),
+    Band1BWAttachment(audioProcessor.apvts, "Band1 BW", Band1BW),
+    Band1BGAttachment(audioProcessor.apvts, "Band1 BW Gain", Band1BG),
+    Band1G0Attachment(audioProcessor.apvts, "Band1 Reference", Band1G0),
+    Band2f0Attachment(audioProcessor.apvts, "Band2 Freq", Band2f0),
+    Band2GAttachment(audioProcessor.apvts, "Band2 Wzmocnienie", Band2G),
+    Band2BWAttachment(audioProcessor.apvts, "Band2 BW", Band2BW),
+    Band2BGAttachment(audioProcessor.apvts, "Band2 BW Gain", Band2BG),
+    Band2G0Attachment(audioProcessor.apvts, "Band2 Reference", Band2G0)
 {
     for (auto* elem : wstawElementy())
     {

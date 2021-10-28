@@ -39,15 +39,29 @@ private:
     ParametricEQAudioProcessor& audioProcessor;
 
     WlasnyRotarySlider Band1f0,
-        Band1BW,
-        Band1BG,
-        Band1G0,
-        Band1G, 
-        Band2f0,
-        Band2BW,
-        Band2BG,
-        Band2G0,
-        Band2G;
+                        Band1BW,
+                        Band1BG,
+                        Band1G0,
+                        Band1G, 
+                        Band2f0,
+                        Band2BW,
+                        Band2BG,
+                        Band2G0,
+                        Band2G;
+
+    using APVTS = juce::AudioProcessorValueTreeState;
+    using Attachment = APVTS::SliderAttachment;
+
+    Attachment Band1f0Attachment,
+                Band1BWAttachment,
+                Band1BGAttachment,
+                Band1G0Attachment,
+                Band1GAttachment,
+                Band2f0Attachment,
+                Band2BWAttachment,
+                Band2BGAttachment,
+                Band2G0Attachment,
+                Band2GAttachment;
 
     std::vector<juce::Component*> wstawElementy();
 
