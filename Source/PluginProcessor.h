@@ -24,7 +24,10 @@ using Band = juce::dsp::IIR::Filter<float>;
 
 using Mono = juce::dsp::ProcessorChain<Band, Band>;
 
-Mono leftCh, rightCh;
+using Wspolczynniki = Band::CoefficientsPtr;
+void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe);
+
+Wspolczynniki makePeakFilter(const ChainSettings& chainSettings, double sampleRate, const size_t index);
 
 //==============================================================================
 /**
@@ -32,6 +35,7 @@ Mono leftCh, rightCh;
 class ParametricEQAudioProcessor  : public juce::AudioProcessor
 {
 public:
+
     //==============================================================================
     ParametricEQAudioProcessor();
     ~ParametricEQAudioProcessor() override;
@@ -79,17 +83,22 @@ private:
     float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
 
-
+    Mono leftCh, rightCh;
 
     enum chainPos
     {
         Band1,
         Band2
     };
+    // void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
 
-    void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
+    void updatePeak(const ChainSettings& chainSettings, const size_t index);
+
+   
 
     void updateFilters();
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametricEQAudioProcessor)
 };

@@ -93,50 +93,7 @@ void ParametricEQAudioProcessor::changeProgramName (int index, const juce::Strin
 }
 
 //==============================================================================
-void ParametricEQAudioProcessor::generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index)
-{
-    if (fs > 0) {
 
-        beta = tan(Bf / 2 * PI / (fs / 2)) * sqrt(abs(pow(pow(10, GB / 20), 2) - pow(pow(10, G0 / 20), 2))) / sqrt(abs(pow(pow(10, G / 20), 2) - pow(pow(10, GB / 20), 2)));
-        b0 = (pow(10, G0 / 20) + pow(10, G / 20) * beta) / (1 + beta);
-        b1 = -2 * pow(10, G0 / 20) * cos(f0 * PI / (fs / 2)) / (1 + beta);
-        b2 = (pow(10, G0 / 20) - pow(10, G / 20) * beta) / (1 + beta);
-
-        a0 = 1;
-        a1 = -2 * cos(f0 * PI / (fs / 2)) / (1 + beta);
-        a2 = (1 - beta) / (1 + beta);
-
-
-    }
-
-    juce::dsp::IIR::Coefficients<float>::Ptr coeffs(new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2));
-    if (coeffs)
-    {
-        if (index == 0)
-        {
-            *leftCh.get<0>().coefficients = *coeffs;
-            *rightCh.get<0>().coefficients = *coeffs;
-        }
-        else if (index == 1)
-        {
-            *leftCh.get<1>().coefficients = *coeffs;
-            *rightCh.get<1>().coefficients = *coeffs;
-        }
-    }
-}
-void ParametricEQAudioProcessor::updateFilters()
-{
-
-    auto chainSettings = getChainSettings(apvts);
-
-    for (size_t i = 0; i < 2; i++) {
-        if (i == 0)
-            generujWspolczynniki(getSampleRate(), chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i);
-        else if (i == 1)
-            generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
-    }
-
-}
 
 void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
@@ -261,6 +218,145 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
 
     return ustawienia;
 }
+
+Wspolczynniki makePeakFilter(const ChainSettings& chainSettings, double sampleRate, const size_t index)
+{
+    float beta = 0;
+    float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
+    if (sampleRate > 0) {
+
+        //chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i;
+        if (index == 0)
+        {
+            beta = tan(chainSettings.Band1BW / 2 * PI / (sampleRate / 2)) * sqrt(abs(pow(pow(10, chainSettings.Band1BWGain / 20), 2) - pow(pow(10, chainSettings.Band1GainRef / 20), 2))) / sqrt(abs(pow(pow(10, chainSettings.Band1GainToDB / 20), 2) - pow(pow(10, chainSettings.Band1BWGain / 20), 2)));
+            b0 = (pow(10, chainSettings.Band1GainRef / 20) + pow(10, chainSettings.Band1GainToDB / 20) * beta) / (1 + beta);
+            b1 = -2 * pow(10, chainSettings.Band1GainRef / 20) * cos(chainSettings.Band1Freq * PI / (sampleRate / 2)) / (1 + beta);
+            b2 = (pow(10, chainSettings.Band1GainRef / 20) - pow(10, chainSettings.Band1GainToDB / 20) * beta) / (1 + beta);
+
+            a0 = 1;
+            a1 = -2 * cos(chainSettings.Band1Freq * PI / (sampleRate / 2)) / (1 + beta);
+            a2 = (1 - beta) / (1 + beta);
+        }
+        else if (index == 1)
+        {
+            beta = tan(chainSettings.Band2BW / 2 * PI / (sampleRate / 2)) * sqrt(abs(pow(pow(10, chainSettings.Band2BWGain / 20), 2) - pow(pow(10, chainSettings.Band2GainRef / 20), 2))) / sqrt(abs(pow(pow(10, chainSettings.Band2GainToDB / 20), 2) - pow(pow(10, chainSettings.Band2BWGain / 20), 2)));
+            b0 = (pow(10, chainSettings.Band2GainRef / 20) + pow(10, chainSettings.Band2GainToDB / 20) * beta) / (1 + beta);
+            b1 = -2 * pow(10, chainSettings.Band2GainRef / 20) * cos(chainSettings.Band2Freq * PI / (sampleRate / 2)) / (1 + beta);
+            b2 = (pow(10, chainSettings.Band2GainRef / 20) - pow(10, chainSettings.Band2GainToDB / 20) * beta) / (1 + beta);
+
+            a0 = 1;
+            a1 = -2 * cos(chainSettings.Band2Freq * PI / (sampleRate / 2)) / (1 + beta);
+            a2 = (1 - beta) / (1 + beta);
+        }
+
+
+
+    }
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+}
+
+void ParametricEQAudioProcessor::updatePeak(const ChainSettings& chainSettings, const size_t index)
+{
+    /*if (getSampleRate() > 0) {
+
+        //chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i;
+        if (index == 0)
+        {
+            beta = tan(chainSettings.Band1BW / 2 * PI / (getSampleRate() / 2)) * sqrt(abs(pow(pow(10, chainSettings.Band1BWGain / 20), 2) - pow(pow(10, chainSettings.Band1GainRef / 20), 2))) / sqrt(abs(pow(pow(10, chainSettings.Band1GainToDB / 20), 2) - pow(pow(10, chainSettings.Band1BWGain / 20), 2)));
+            b0 = (pow(10, chainSettings.Band1GainRef / 20) + pow(10, chainSettings.Band1GainToDB / 20) * beta) / (1 + beta);
+            b1 = -2 * pow(10, chainSettings.Band1GainRef / 20) * cos(chainSettings.Band1Freq * PI / (getSampleRate() / 2)) / (1 + beta);
+            b2 = (pow(10, chainSettings.Band1GainRef / 20) - pow(10, chainSettings.Band1GainToDB / 20) * beta) / (1 + beta);
+
+            a0 = 1;
+            a1 = -2 * cos(chainSettings.Band1Freq * PI / (getSampleRate() / 2)) / (1 + beta);
+            a2 = (1 - beta) / (1 + beta);
+        }
+        else if (index == 1)
+        {
+            beta = tan(chainSettings.Band2BW / 2 * PI / (getSampleRate() / 2)) * sqrt(abs(pow(pow(10, chainSettings.Band2BWGain / 20), 2) - pow(pow(10, chainSettings.Band2GainRef / 20), 2))) / sqrt(abs(pow(pow(10, chainSettings.Band2GainToDB / 20), 2) - pow(pow(10, chainSettings.Band2BWGain / 20), 2)));
+            b0 = (pow(10, chainSettings.Band2GainRef / 20) + pow(10, chainSettings.Band2GainToDB / 20) * beta) / (1 + beta);
+            b1 = -2 * pow(10, chainSettings.Band2GainRef / 20) * cos(chainSettings.Band2Freq * PI / (getSampleRate() / 2)) / (1 + beta);
+            b2 = (pow(10, chainSettings.Band2GainRef / 20) - pow(10, chainSettings.Band2GainToDB / 20) * beta) / (1 + beta);
+
+            a0 = 1;
+            a1 = -2 * cos(chainSettings.Band2Freq * PI / (getSampleRate() / 2)) / (1 + beta);
+            a2 = (1 - beta) / (1 + beta);
+        }
+       
+
+
+    }
+
+    juce::dsp::IIR::Coefficients<float>::Ptr coeffs(new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2));*/
+
+    auto& coeffs = makePeakFilter(chainSettings, getSampleRate(), index);
+    if (coeffs)
+    {
+        if (index == 0)
+        {
+            updateCoeffs(leftCh.get<0>().coefficients, coeffs);
+            updateCoeffs(rightCh.get<0>().coefficients, coeffs);
+        }
+        else if (index == 1)
+        {
+            updateCoeffs(leftCh.get<1>().coefficients, coeffs);
+            updateCoeffs(rightCh.get<1>().coefficients, coeffs);
+        }
+    }
+}
+void/* ParametricEQAudioProcessor::*/updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe)
+{
+    *old = *nowe;
+}
+
+
+void ParametricEQAudioProcessor::updateFilters()
+{
+
+    auto chainSettings = getChainSettings(apvts);
+
+    for (size_t i = 0; i < 2; i++) {
+        if (i == 0)
+            //generujWspolczynniki(getSampleRate(), chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i);
+            updatePeak(chainSettings, i);
+        else if (i == 1)
+            //generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
+            updatePeak(chainSettings, i);
+    }
+
+}
+
+/*void ParametricEQAudioProcessor::generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index)
+{
+    if (fs > 0) {
+
+        beta = tan(Bf / 2 * PI / (fs / 2)) * sqrt(abs(pow(pow(10, GB / 20), 2) - pow(pow(10, G0 / 20), 2))) / sqrt(abs(pow(pow(10, G / 20), 2) - pow(pow(10, GB / 20), 2)));
+        b0 = (pow(10, G0 / 20) + pow(10, G / 20) * beta) / (1 + beta);
+        b1 = -2 * pow(10, G0 / 20) * cos(f0 * PI / (fs / 2)) / (1 + beta);
+        b2 = (pow(10, G0 / 20) - pow(10, G / 20) * beta) / (1 + beta);
+
+        a0 = 1;
+        a1 = -2 * cos(f0 * PI / (fs / 2)) / (1 + beta);
+        a2 = (1 - beta) / (1 + beta);
+
+
+    }
+
+    juce::dsp::IIR::Coefficients<float>::Ptr coeffs(new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2));
+    if (coeffs)
+    {
+        if (index == 0)
+        {
+            *leftCh.get<0>().coefficients = *coeffs;
+            *rightCh.get<0>().coefficients = *coeffs;
+        }
+        else if (index == 1)
+        {
+            *leftCh.get<1>().coefficients = *coeffs;
+            *rightCh.get<1>().coefficients = *coeffs;
+        }
+    }
+}*/
 
 juce::AudioProcessorValueTreeState::ParameterLayout
     ParametricEQAudioProcessor::createParameterLayout()
