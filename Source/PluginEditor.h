@@ -14,7 +14,7 @@
 struct WlasnyRotarySlider : juce::Slider
 {
     WlasnyRotarySlider() : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                        juce::Slider::TextEntryBoxPosition::NoTextBox)
+                                        juce::Slider::TextEntryBoxPosition::TextBoxRight)
     {
 
     }
@@ -63,12 +63,25 @@ private:
                         Band1BW,
                         Band1BG,
                         Band1G0,
-                        Band1G, 
+                        Band1G,
                         Band2f0,
                         Band2BW,
                         Band2BG,
                         Band2G0,
-                        Band2G;
+                        Band2G,
+                        Band3f0,
+                        Band3BW,
+                        Band3BG,
+                        Band3G0,
+                        Band3G,
+                        Band4f0,
+                        Band4BW,
+                        Band4BG,
+                        Band4G0,
+                        Band4G,
+                        LowShelfFreq,
+                        LowShelfQ,
+                        LowShelfG;
 
     using APVTS = juce::AudioProcessorValueTreeState;
     using Attachment = APVTS::SliderAttachment;
@@ -82,7 +95,20 @@ private:
                 Band2BWAttachment,
                 Band2BGAttachment,
                 Band2G0Attachment,
-                Band2GAttachment;
+                Band2GAttachment,
+                Band3f0Attachment,
+                Band3BWAttachment,
+                Band3BGAttachment,
+                Band3G0Attachment,
+                Band3GAttachment,
+                Band4f0Attachment,
+                Band4BWAttachment,
+                Band4BGAttachment,
+                Band4G0Attachment,
+                Band4GAttachment,
+                LowShelfFreqAttachment,
+                LowShelfQAttachment,
+                LowShelfGAttachment;
 
     std::vector<juce::Component*> wstawElementy();
 

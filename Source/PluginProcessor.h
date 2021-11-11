@@ -11,23 +11,31 @@
 #include <JuceHeader.h>
 
 
-struct ChainSettings
+struct Nastawy
 {
     float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1BW{ 1.f }, Band1BWGain{ 0 }, Band1GainRef{ 0 };
     float Band2Freq{ 0 }, Band2GainToDB{ 0 }, Band2BW{ 1.f }, Band2BWGain{ 0 }, Band2GainRef{ 0 };
-
+    float Band3Freq{ 0 }, Band3GainToDB{ 0 }, Band3BW{ 1.f }, Band3BWGain{ 0 }, Band3GainRef{ 0 };
+    float Band4Freq{ 0 }, Band4GainToDB{ 0 }, Band4BW{ 1.f }, Band4BWGain{ 0 }, Band4GainRef{ 0 };
+    float LowShelfFreq{ 15000.f }, LowShelfQ{ 1.f }, LowShelfGain{ 0 };
 };
 
-ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
+Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts);
 
 using Band = juce::dsp::IIR::Filter<float>;
 
-using Mono = juce::dsp::ProcessorChain<Band, Band>;
+using LowShelf = Band;
+
+using Mono = juce::dsp::ProcessorChain<LowShelf, Band, Band, Band, Band>;
 
 using Wspolczynniki = Band::CoefficientsPtr;
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe);
+void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate);
 
-Wspolczynniki makePeakFilter(const ChainSettings& chainSettings, double sampleRate, const size_t index);
+Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const size_t index);
+
+Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate);
+
 
 //==============================================================================
 /**
@@ -92,7 +100,9 @@ private:
     };
     // void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
 
-    void updatePeak(const ChainSettings& chainSettings, const size_t index);
+    void updatePeak(const Nastawy& nastawy, const size_t index);
+
+    void updateLS(const Nastawy& nastawy);
 
    
 
