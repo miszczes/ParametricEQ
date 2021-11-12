@@ -22,24 +22,56 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     g.setColour(Colour(179u, 11u, 0u));
     g.drawEllipse(bounds, 5.f);
 
-    auto center = bounds.getCentre();
-    Path p;
+    if (auto* wrs = dynamic_cast<WlasnyRotarySlider*>(&slider))
+    {
+        auto center = bounds.getCentre();
+        Path p;
 
-    Rectangle<float> rect;
-    rect.setLeft(center.getX() - 2);
-    rect.setRight(center.getX() + 2);
-    rect.setTop(bounds.getY());
-    rect.setBottom(center.getY()-30);
+        Rectangle<float> rect;
+        rect.setLeft(center.getX() - 2);
+        rect.setRight(center.getX() + 2);
+        rect.setTop(bounds.getY());
+        rect.setBottom(center.getY() - 30);
 
-    p.addRectangle(rect);
+        p.addRoundedRectangle(rect, 2.f);
+        jassert(rotaryStartAngle < rotaryEndAngle);
 
-    jassert(rotaryStartAngle < rotaryEndAngle);
+        auto sliderKatRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);
 
-    auto sliderKatRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);
+        p.applyTransform(AffineTransform().rotated(sliderKatRad, center.getX(), center.getY()));
 
-    p.applyTransform(AffineTransform().rotated(sliderKatRad, center.getX(), center.getY()));
+        g.fillPath(p);
 
-    g.fillPath(p);
+        g.setFont(wrs->getTextHeight());
+        auto text = wrs->getDisplayString();
+        auto textWidth = g.getCurrentFont().getStringWidth(text);
+        
+        rect.setSize(textWidth + 4, wrs->getTextHeight() + 2);
+        rect.setCentre(bounds.getCentre());
+
+
+        //miejsce na zmiane koloru prostokatu w ktorym znajduje sie wartośc liczbowa
+
+        g.setColour(Colours::white);
+        g.drawFittedText(text, rect.toNearestInt(), juce::Justification::verticallyCentred, 1);
+
+        Rectangle<float> rectLabel;
+        auto textLabel = wrs->displayLabel();
+        auto textWidthLabel = g.getCurrentFont().getStringWidth(textLabel);
+
+        rectLabel.setSize(textWidthLabel + 4, wrs->getTextHeight() + 2);
+        rectLabel.setCentre(bounds.getCentreX(), bounds.getCentreY()+30);
+
+        g.setColour(Colour(179u, 11u, 0u));
+        g.setFont(Font("Arial", 20, Font::bold));
+        g.drawFittedText(textLabel, rectLabel.toNearestInt(), juce::Justification::verticallyCentred, 1);
+    }
+
+
+
+    
+
+
 }
 //==============================================================================
 void WlasnyRotarySlider::paint(juce::Graphics& g)
@@ -51,6 +83,11 @@ void WlasnyRotarySlider::paint(juce::Graphics& g)
 
     auto range = getRange();
     auto sliderBounds = getSliderBounds();
+
+    //g.setColour(Colours::blue);
+    //g.drawRect(getLocalBounds());
+    //g.setColour(Colours::yellow);
+    //g.drawRect(sliderBounds);
 
     getLookAndFeel().drawRotarySlider(g,    
                                         sliderBounds.getX(), 
@@ -65,39 +102,88 @@ void WlasnyRotarySlider::paint(juce::Graphics& g)
 
 juce::Rectangle<int> WlasnyRotarySlider::getSliderBounds() const
 {
-    return getLocalBounds();
+    auto bounds = getLocalBounds();
+
+    auto size = juce::jmin(bounds.getWidth(), bounds.getHeight());
+
+    size -= getTextHeight() * 2;
+    juce::Rectangle<int> rect;
+    rect.setSize(size, size);
+    rect.setCentre(bounds.getCentreX(), 0);
+    rect.setY(2);
+
+    return rect;
+
 }
 
+juce::String WlasnyRotarySlider::getDisplayString() const
+{
+    //return juce::String(getValue());
+    juce::String str;
+    bool addK = false;
+
+    if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param))
+    {
+        float value = getValue();
+        if (value > 999.f)
+        {
+            value /= 1000.f;
+            addK = true;
+        }
+        str = juce::String(value, (addK ? 2 : 0));
+    }
+    else
+    {
+        jassertfalse;
+    }
+    if (jednostka.isNotEmpty())
+    {
+        str << " ";
+        if (addK)
+            str << "k";
+        str << jednostka;
+    }
+    return str;
+
+}
+juce::String WlasnyRotarySlider::displayLabel() const
+{
+    return label;
+}
 //==============================================================================
 ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p),
-    Band1f0(*audioProcessor.apvts.getParameter("Band1 Freq"), "Hz"),
-    Band1G(*audioProcessor.apvts.getParameter("Band1 Wzmocnienie"), "dB"),
-    Band1BW(*audioProcessor.apvts.getParameter("Band1 BW"), "Hz"),
-    Band1BG(*audioProcessor.apvts.getParameter("Band1 BW Gain"), "dB"),
-    Band1G0(*audioProcessor.apvts.getParameter("Band1 Reference"), "dB"),
+    Band1f0(*audioProcessor.apvts.getParameter("Band1 Freq"), "Hz", "f0"),
+    Band1G(*audioProcessor.apvts.getParameter("Band1 Wzmocnienie"), "dB", "Gain"),
+    Band1BW(*audioProcessor.apvts.getParameter("Band1 BW"), "Hz", "BW"),
+    Band1BG(*audioProcessor.apvts.getParameter("Band1 BW Gain"), "dB", "GB"),
+    Band1G0(*audioProcessor.apvts.getParameter("Band1 Reference"), "dB", "G0"),
 
-    Band2f0(*audioProcessor.apvts.getParameter("Band2 Freq"), "Hz"),
-    Band2G(*audioProcessor.apvts.getParameter("Band2 Wzmocnienie"), "dB"),
-    Band2BW(*audioProcessor.apvts.getParameter("Band2 BW"), "Hz"),
-    Band2BG(*audioProcessor.apvts.getParameter("Band2 BW Gain"), "dB"),
-    Band2G0(*audioProcessor.apvts.getParameter("Band2 Reference"), "dB"),
+    Band2f0(*audioProcessor.apvts.getParameter("Band2 Freq"), "Hz", "f0"),
+    Band2G(*audioProcessor.apvts.getParameter("Band2 Wzmocnienie"), "dB", "Gain"),
+    Band2BW(*audioProcessor.apvts.getParameter("Band2 BW"), "Hz", "BW"),
+    Band2BG(*audioProcessor.apvts.getParameter("Band2 BW Gain"), "dB", "GB"),
+    Band2G0(*audioProcessor.apvts.getParameter("Band2 Reference"), "dB", "G0"),
 
-    Band3f0(*audioProcessor.apvts.getParameter("Band3 Freq"), "Hz"),
-    Band3G(*audioProcessor.apvts.getParameter("Band3 Wzmocnienie"), "dB"),
-    Band3BW(*audioProcessor.apvts.getParameter("Band3 BW"), "Hz"),
-    Band3BG(*audioProcessor.apvts.getParameter("Band3 BW Gain"), "dB"),
-    Band3G0(*audioProcessor.apvts.getParameter("Band3 Reference"), "dB"),
+    Band3f0(*audioProcessor.apvts.getParameter("Band3 Freq"), "Hz", "f0"),
+    Band3G(*audioProcessor.apvts.getParameter("Band3 Wzmocnienie"), "dB", "Gain"),
+    Band3BW(*audioProcessor.apvts.getParameter("Band3 BW"), "Hz", "BW"),
+    Band3BG(*audioProcessor.apvts.getParameter("Band3 BW Gain"), "dB", "GB"),
+    Band3G0(*audioProcessor.apvts.getParameter("Band3 Reference"), "dB", "G0"),
 
-    Band4f0(*audioProcessor.apvts.getParameter("Band4 Freq"), "Hz"),
-    Band4G(*audioProcessor.apvts.getParameter("Band4 Wzmocnienie"), "dB"),
-    Band4BW(*audioProcessor.apvts.getParameter("Band4 BW"), "Hz"),
-    Band4BG(*audioProcessor.apvts.getParameter("Band4 BW Gain"), "dB"),
-    Band4G0(*audioProcessor.apvts.getParameter("Band4 Reference"), "dB"),
+    Band4f0(*audioProcessor.apvts.getParameter("Band4 Freq"), "Hz", "f0"),
+    Band4G(*audioProcessor.apvts.getParameter("Band4 Wzmocnienie"), "dB", "Gain"),
+    Band4BW(*audioProcessor.apvts.getParameter("Band4 BW"), "Hz", "BW"),
+    Band4BG(*audioProcessor.apvts.getParameter("Band4 BW Gain"), "dB", "GB"),
+    Band4G0(*audioProcessor.apvts.getParameter("Band4 Reference"), "dB", "G0"),
 
-    LowShelfFreq(*audioProcessor.apvts.getParameter("LS Freq"), "Hz"),
-    LowShelfQ(*audioProcessor.apvts.getParameter("LS Q"), ""),
-    LowShelfG(*audioProcessor.apvts.getParameter("LS Wzmocnienie"), "dB"),
+    LowShelfFreq(*audioProcessor.apvts.getParameter("LS Freq"), "Hz", "f"),
+    LowShelfQ(*audioProcessor.apvts.getParameter("LS Q"), "", "Q"),
+    LowShelfG(*audioProcessor.apvts.getParameter("LS Wzmocnienie"), "dB", "Gain"),
+
+    HighShelfFreq(*audioProcessor.apvts.getParameter("HS Freq"), "Hz", "f"),
+    HighShelfQ(*audioProcessor.apvts.getParameter("HS Q"), "", "Q"),
+    HighShelfG(*audioProcessor.apvts.getParameter("HS Wzmocnienie"), "dB", "Gain"),
 
 
     Band1f0Attachment(audioProcessor.apvts, "Band1 Freq",Band1f0),
@@ -126,7 +212,11 @@ ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQ
 
     LowShelfFreqAttachment(audioProcessor.apvts, "LS Freq", LowShelfFreq),
     LowShelfQAttachment(audioProcessor.apvts, "LS Q", LowShelfQ),
-    LowShelfGAttachment(audioProcessor.apvts, "LS Wzmocnienie", LowShelfG)
+    LowShelfGAttachment(audioProcessor.apvts, "LS Wzmocnienie", LowShelfG),
+
+    HighShelfFreqAttachment(audioProcessor.apvts, "HS Freq", HighShelfFreq),
+    HighShelfQAttachment(audioProcessor.apvts, "HS Q", HighShelfQ),
+    HighShelfGAttachment(audioProcessor.apvts, "HS Wzmocnienie", HighShelfG)
 {
     for (auto* elem : wstawElementy())
     {
@@ -173,6 +263,7 @@ void ParametricEQAudioProcessorEditor::paint (juce::Graphics& g)
     auto& band2 = monoChain.get<2>();
     auto& band3 = monoChain.get<3>();
     auto& band4 = monoChain.get<4>();
+    auto& HighShelf = monoChain.get<5>();
 
     auto sampleRate = audioProcessor.getSampleRate();
 
@@ -195,6 +286,8 @@ void ParametricEQAudioProcessorEditor::paint (juce::Graphics& g)
             mag *= band3.coefficients->getMagnitudeForFrequency(freq, sampleRate);
         if (!monoChain.isBypassed<4>())
             mag *= band4.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<5>())
+            mag *= HighShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
             
 
         magnitudes[i] = Decibels::gainToDecibels(mag);
@@ -233,29 +326,29 @@ void ParametricEQAudioProcessorEditor::resized()
     auto bounds = getLocalBounds();
     auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
 
-    auto reference = bounds.removeFromLeft(bounds.getWidth() * 0.17);
+    auto reference = bounds.removeFromLeft(bounds.getWidth() * 0.14);
     Band1G0.setBounds(reference.removeFromBottom(bounds.getHeight() * 0.2));
 
-    auto ls = bounds.removeFromLeft(bounds.getWidth() * 0.20);
+    auto ls = bounds.removeFromLeft(bounds.getWidth() * 0.17);
     LowShelfFreq.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
     LowShelfG.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
     LowShelfQ.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
     
-    auto band1 = bounds.removeFromLeft(bounds.getWidth() * 0.25);
+    auto band1 = bounds.removeFromLeft(bounds.getWidth() * 0.20);
     Band1f0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
     Band1G.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
     Band1BW.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
     Band1BG.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
     //Band1G0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
 
-    auto band2 = bounds.removeFromLeft(bounds.getWidth() * 0.33);
+    auto band2 = bounds.removeFromLeft(bounds.getWidth() * 0.25);
     Band2f0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     Band2G.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     Band2BW.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     Band2BG.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
    // Band2G0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
 
-    auto band3 = bounds.removeFromLeft(bounds.getWidth() * 0.50);
+    auto band3 = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     Band3f0.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
     Band3G.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
     Band3BW.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
@@ -267,12 +360,18 @@ void ParametricEQAudioProcessorEditor::resized()
     //Band2G.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     //Band2BW.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     //Band2BG.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
+    
+    auto band4 = bounds.removeFromLeft(bounds.getWidth() * 0.5);
+    Band4f0.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
+    Band4G.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
+    Band4BW.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
+    Band4BG.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
+    // Band4G0.setBounds(bounds.removeFromTop(bounds.getHeight()));
 
-    Band4f0.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.25));
-    Band4G.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.33));
-    Band4BW.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));
-    Band4BG.setBounds(bounds.removeFromTop(bounds.getHeight()));
-   // Band4G0.setBounds(bounds.removeFromTop(bounds.getHeight()));
+    HighShelfFreq.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.33));
+    HighShelfG.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));
+    HighShelfQ.setBounds(bounds.removeFromTop(bounds.getHeight()));
+   
 
     background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
     Graphics g(background);
@@ -331,10 +430,18 @@ void ParametricEQAudioProcessorEditor::timerCallback()
                 auto peakCoeffs = makePeakFilter(nastaw, audioProcessor.getSampleRate(), i);
                 updateCoeffs(monoChain.get<4 >().coefficients, peakCoeffs);
             }
+        }
+        for (size_t n = 0; n < 2; n++) {
+            if (n == 0) {
 
-            auto peakCoeffs = makeLowShelf(nastaw, audioProcessor.getSampleRate());
-            updateCoeffs(monoChain.get<0>().coefficients, peakCoeffs);
+                auto LSCoeffs = makeShelf(nastaw, audioProcessor.getSampleRate(), n);
+                updateCoeffs(monoChain.get<0>().coefficients, LSCoeffs);
+            }
+            else if (n == 1) {
+                auto HSCoeffs = makeShelf(nastaw, audioProcessor.getSampleRate(), n);
+                updateCoeffs(monoChain.get<5>().coefficients, HSCoeffs);
 
+            }
         }
         repaint();
     }
@@ -367,6 +474,10 @@ std::vector<juce::Component*> ParametricEQAudioProcessorEditor::wstawElementy()
 
         &LowShelfFreq,
         &LowShelfQ,
-        &LowShelfG
+        &LowShelfG,
+
+        &HighShelfFreq,
+        &HighShelfQ,
+        &HighShelfG
     };
 }

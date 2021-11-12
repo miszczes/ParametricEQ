@@ -243,6 +243,10 @@ Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts)
     ustawienia.LowShelfGain = apvts.getRawParameterValue("LS Wzmocnienie")->load();
     ustawienia.LowShelfQ = apvts.getRawParameterValue("LS Q")->load();
 
+    ustawienia.HighShelfFreq = apvts.getRawParameterValue("HS Freq")->load();
+    ustawienia.HighShelfGain = apvts.getRawParameterValue("HS Wzmocnienie")->load();
+    ustawienia.HighShelfQ = apvts.getRawParameterValue("HS Q")->load();
+
 
     return ustawienia;
 }
@@ -285,13 +289,26 @@ Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const si
     return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
 }
 
-Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate)
+Wspolczynniki makeShelf(const Nastawy& nastawy, double sampleRate, const size_t index)
 {
-    return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, 
-                                                            nastawy.LowShelfFreq,
-                                                            nastawy.LowShelfQ, 
-                                                            juce::Decibels::decibelsToGain(nastawy.LowShelfGain));
+    if (index == 0)
+    {
+        return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate,
+                                                                nastawy.LowShelfFreq,
+                                                                nastawy.LowShelfQ,
+                                                                juce::Decibels::decibelsToGain(nastawy.LowShelfGain));
+
+    }
+    else if (index == 1)
+    {
+        return juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate,
+                                                                nastawy.HighShelfFreq,
+                                                                nastawy.HighShelfQ,
+                                                                juce::Decibels::decibelsToGain(nastawy.HighShelfGain));
+    }
+
 }
+
 
 void ParametricEQAudioProcessor::updatePeak(const Nastawy& nastawy, const size_t index)
 {
@@ -321,19 +338,26 @@ void ParametricEQAudioProcessor::updatePeak(const Nastawy& nastawy, const size_t
         }
     }
 }
-void ParametricEQAudioProcessor::updateLS(const Nastawy& nastawy)
+void ParametricEQAudioProcessor::updateShelf(const Nastawy& nastawy, const size_t index)
 {
-    auto LScoeffs = makeLowShelf(nastawy, getSampleRate());
+    auto Scoeffs = makeShelf(nastawy, getSampleRate(), index);
+    if (index == 0)
+    {
+        updateCoeffs(leftCh.get<0>().coefficients, Scoeffs);
+        updateCoeffs(rightCh.get<0>().coefficients, Scoeffs);
 
-    updateCoeffs(leftCh.get<0>().coefficients, LScoeffs);
-    updateCoeffs(rightCh.get<0>().coefficients, LScoeffs);
+    }
+    else if (index == 1)
+    {
+        updateCoeffs(leftCh.get<5>().coefficients, Scoeffs);
+        updateCoeffs(rightCh.get<5>().coefficients, Scoeffs);
+    }
 }
+
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe)
 {
     *old = *nowe;
 }
-
-
 void ParametricEQAudioProcessor::updateFilters()
 {
 
@@ -354,7 +378,15 @@ void ParametricEQAudioProcessor::updateFilters()
             updatePeak(nastawy, i);
             
     }
-    updateLS(nastawy);
+    for (size_t n = 0; n < 2; n++)
+    {
+        if (n == 0)
+            updateShelf(nastawy, n);
+        else if (n == 1)
+            updateShelf(nastawy, n);
+    }
+
+
 }
 
 
@@ -399,7 +431,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW Gain",
         "Band2 BW Gain",
-        juce::NormalisableRange<float>(0.f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Reference",
         "Band2 Reference",
@@ -420,7 +452,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 BW Gain",
         "Band3 BW Gain",
-        juce::NormalisableRange<float>(0.f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Reference",
         "Band3 Reference",
@@ -430,7 +462,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Freq",
         "Band4 Freq",
         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
-        1000.f));
+        6000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Wzmocnienie",
         "Band4 Wzmocnienie",
         juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
@@ -441,7 +473,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 BW Gain",
         "Band4 BW Gain",
-        juce::NormalisableRange<float>(0.f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Reference",
         "Band4 Reference",
@@ -458,6 +490,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("LS Q",
         "LS Q",
+        juce::NormalisableRange<float>(1.f, 10.f, 0.5f, 1.f),
+        1.f));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HS Freq",
+        "HS Freq",
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        10000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HS Wzmocnienie",
+        "HS Wzmocnienie",
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        0.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HS Q",
+        "HS Q",
         juce::NormalisableRange<float>(1.f, 10.f, 0.5f, 1.f),
         1.f));
 

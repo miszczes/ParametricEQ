@@ -23,10 +23,11 @@ struct LookAndFeel : juce::LookAndFeel_V4
 
 struct WlasnyRotarySlider : juce::Slider
 {
-    WlasnyRotarySlider(juce::RangedAudioParameter &rap, const juce::String& unit) : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+    WlasnyRotarySlider(juce::RangedAudioParameter &rap, const juce::String& unit, const juce::String& sliderLabel) : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                                                                                     juce::Slider::TextEntryBoxPosition::NoTextBox),
         param(&rap),
-        jednostka(unit)
+        jednostka(unit),
+        label(sliderLabel)
     {
         setLookAndFeel(&lnf);
     }
@@ -39,11 +40,14 @@ struct WlasnyRotarySlider : juce::Slider
     juce::Rectangle<int> getSliderBounds() const;
     int getTextHeight() const { return 14; }
     juce::String getDisplayString() const;
+
+    juce::String displayLabel() const;
 private:
     LookAndFeel lnf;
 
     juce::RangedAudioParameter* param;
     juce::String jednostka;
+    juce::String label;
 };
 
 //==============================================================================
@@ -107,7 +111,10 @@ private:
                         Band4G,
                         LowShelfFreq,
                         LowShelfQ,
-                        LowShelfG;
+                        LowShelfG,
+                        HighShelfFreq,
+                        HighShelfQ,
+                        HighShelfG;
 
     using APVTS = juce::AudioProcessorValueTreeState;
     using Attachment = APVTS::SliderAttachment;
@@ -134,7 +141,10 @@ private:
                 Band4GAttachment,
                 LowShelfFreqAttachment,
                 LowShelfQAttachment,
-                LowShelfGAttachment;
+                LowShelfGAttachment,
+                HighShelfFreqAttachment,
+                HighShelfQAttachment,
+                HighShelfGAttachment;
 
     std::vector<juce::Component*> wstawElementy();
 

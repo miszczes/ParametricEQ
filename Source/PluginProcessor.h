@@ -18,6 +18,7 @@ struct Nastawy
     float Band3Freq{ 0 }, Band3GainToDB{ 0 }, Band3BW{ 1.f }, Band3BWGain{ 0 }, Band3GainRef{ 0 };
     float Band4Freq{ 0 }, Band4GainToDB{ 0 }, Band4BW{ 1.f }, Band4BWGain{ 0 }, Band4GainRef{ 0 };
     float LowShelfFreq{ 15000.f }, LowShelfQ{ 1.f }, LowShelfGain{ 0 };
+    float HighShelfFreq{ 15000.f }, HighShelfQ{ 1.f }, HighShelfGain{ 0 };
 };
 
 Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts);
@@ -26,7 +27,9 @@ using Band = juce::dsp::IIR::Filter<float>;
 
 using LowShelf = Band;
 
-using Mono = juce::dsp::ProcessorChain<LowShelf, Band, Band, Band, Band>;
+using HighShelf = Band;
+
+using Mono = juce::dsp::ProcessorChain<LowShelf, Band, Band, Band, Band, HighShelf>;
 
 using Wspolczynniki = Band::CoefficientsPtr;
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe);
@@ -34,7 +37,9 @@ void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate);
 
 Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const size_t index);
 
-Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate);
+Wspolczynniki makeShelf(const Nastawy& nastawy, double sampleRate, const size_t index);
+
+
 
 
 //==============================================================================
@@ -102,7 +107,7 @@ private:
 
     void updatePeak(const Nastawy& nastawy, const size_t index);
 
-    void updateLS(const Nastawy& nastawy);
+    void updateShelf(const Nastawy& nastawy, const size_t index);
 
    
 
