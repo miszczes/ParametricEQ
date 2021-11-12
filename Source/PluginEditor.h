@@ -11,13 +11,39 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
+struct LookAndFeel : juce::LookAndFeel_V4
+{
+    void drawRotarySlider(juce::Graphics&,
+                            int x, int y, int width, int height,
+                            float sliderPosProportional,
+                            float rotaryStartAngle,
+                            float rotaryEndAngle,
+                            juce::Slider&) override { }
+};
+
 struct WlasnyRotarySlider : juce::Slider
 {
-    WlasnyRotarySlider() : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-                                        juce::Slider::TextEntryBoxPosition::TextBoxRight)
+    WlasnyRotarySlider(juce::RangedAudioParameter &rap, const juce::String& unit) : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+                                                                                    juce::Slider::TextEntryBoxPosition::NoTextBox),
+        param(&rap),
+        jednostka(unit)
     {
-
+        setLookAndFeel(&lnf);
     }
+
+    ~WlasnyRotarySlider()
+    {
+        setLookAndFeel(nullptr);
+    }
+    void paint(juce::Graphics& g) override { }
+    juce::Rectangle<int> getSliderBounds() const;
+    int getTextHeight() const { return 14; }
+    juce::String getDisplayString() const;
+private:
+    LookAndFeel lnf;
+
+    juce::RangedAudioParameter* param;
+    juce::String jednostka;
 };
 
 //==============================================================================
@@ -113,6 +139,8 @@ private:
     std::vector<juce::Component*> wstawElementy();
 
     Mono monoChain;
+    
+    juce::Image background;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametricEQAudioProcessorEditor)
 };

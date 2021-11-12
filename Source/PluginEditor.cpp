@@ -9,9 +9,39 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+
 //==============================================================================
 ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p),
+    Band1f0(*audioProcessor.apvts.getParameter("Band1 Freq"), "Hz"),
+    Band1G(*audioProcessor.apvts.getParameter("Band1 Wzmocnienie"), "dB"),
+    Band1BW(*audioProcessor.apvts.getParameter("Band1 BW"), "Hz"),
+    Band1BG(*audioProcessor.apvts.getParameter("Band1 BW Gain"), "dB"),
+    Band1G0(*audioProcessor.apvts.getParameter("Band1 Reference"), "dB"),
+
+    Band2f0(*audioProcessor.apvts.getParameter("Band2 Freq"), "Hz"),
+    Band2G(*audioProcessor.apvts.getParameter("Band2 Wzmocnienie"), "dB"),
+    Band2BW(*audioProcessor.apvts.getParameter("Band2 BW"), "Hz"),
+    Band2BG(*audioProcessor.apvts.getParameter("Band2 BW Gain"), "dB"),
+    Band2G0(*audioProcessor.apvts.getParameter("Band2 Reference"), "dB"),
+
+    Band3f0(*audioProcessor.apvts.getParameter("Band3 Freq"), "Hz"),
+    Band3G(*audioProcessor.apvts.getParameter("Band3 Wzmocnienie"), "dB"),
+    Band3BW(*audioProcessor.apvts.getParameter("Band3 BW"), "Hz"),
+    Band3BG(*audioProcessor.apvts.getParameter("Band3 BW Gain"), "dB"),
+    Band3G0(*audioProcessor.apvts.getParameter("Band3 Reference"), "dB"),
+
+    Band4f0(*audioProcessor.apvts.getParameter("Band4 Freq"), "Hz"),
+    Band4G(*audioProcessor.apvts.getParameter("Band4 Wzmocnienie"), "dB"),
+    Band4BW(*audioProcessor.apvts.getParameter("Band4 BW"), "Hz"),
+    Band4BG(*audioProcessor.apvts.getParameter("Band4 BW Gain"), "dB"),
+    Band4G0(*audioProcessor.apvts.getParameter("Band4 Reference"), "dB"),
+
+    LowShelfFreq(*audioProcessor.apvts.getParameter("LS Freq"), "Hz"),
+    LowShelfQ(*audioProcessor.apvts.getParameter("LS Q"), ""),
+    LowShelfG(*audioProcessor.apvts.getParameter("LS Wzmocnienie"), "dB"),
+
+
     Band1f0Attachment(audioProcessor.apvts, "Band1 Freq",Band1f0),
     Band1GAttachment(audioProcessor.apvts, "Band1 Wzmocnienie", Band1G),
     Band1BWAttachment(audioProcessor.apvts, "Band1 BW", Band1BW),
@@ -76,6 +106,8 @@ void ParametricEQAudioProcessorEditor::paint (juce::Graphics& g)
     auto bounds = getLocalBounds();
     auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
 
+    g.drawImage(background, strefaCharakteryski.toFloat());
+
     auto w = strefaCharakteryski.getWidth();
 
     auto& LowShelf = monoChain.get<0>();
@@ -137,6 +169,7 @@ void ParametricEQAudioProcessorEditor::paint (juce::Graphics& g)
 
 void ParametricEQAudioProcessorEditor::resized()
 {
+    using namespace juce;
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
@@ -182,6 +215,35 @@ void ParametricEQAudioProcessorEditor::resized()
     Band4BW.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));
     Band4BG.setBounds(bounds.removeFromTop(bounds.getHeight()));
    // Band4G0.setBounds(bounds.removeFromTop(bounds.getHeight()));
+
+    background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
+    Graphics g(background);
+
+    Array<float> czest
+    {
+        20, 30, 40, 50, 100,
+        200, 300, 400, 500, 1000,
+        2000, 3000, 4000, 5000, 10000,
+        20000
+    };
+
+    g.setColour(Colours::darkgrey);
+    for (auto f : czest)
+    {
+        auto normX = mapFromLog10(f, 20.f, 20000.f);
+        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
+    }
+
+    Array<float> gain
+    {
+         -12, 0, 12
+    };
+
+    for (auto gl : gain)
+    {
+        auto y = jmap(gl, -24.f, 24.f, float(getHeight()), 0.f);
+        g.drawHorizontalLine(y, 0.f, getWidth());
+    }
 }
     
 void ParametricEQAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
