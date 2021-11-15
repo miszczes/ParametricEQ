@@ -412,39 +412,25 @@ void ParametricEQAudioProcessorEditor::timerCallback()
     if (parametryZmienione.compareAndSetBool(false, true))
     {
         auto nastaw = zbierzNastawy(audioProcessor.apvts);
-        for (size_t i = 0; i < 4; i++)
-        {
-            if (i == 0) {
-                auto peakCoeffs = makePeakFilter(nastaw, audioProcessor.getSampleRate(), i);
-                updateCoeffs(monoChain.get<1 >().coefficients, peakCoeffs);
-            }   
-            else if (i == 1) {
-                auto peakCoeffs = makePeakFilter(nastaw, audioProcessor.getSampleRate(), i);
-                updateCoeffs(monoChain.get<2 >().coefficients, peakCoeffs);
-            }
-            else if (i == 2) {
-                auto peakCoeffs = makePeakFilter(nastaw, audioProcessor.getSampleRate(), i);
-                updateCoeffs(monoChain.get<3 >().coefficients, peakCoeffs);
-            }
-            else if (i == 3) {
-                auto peakCoeffs = makePeakFilter(nastaw, audioProcessor.getSampleRate(), i);
-                updateCoeffs(monoChain.get<4 >().coefficients, peakCoeffs);
-            }
-        }
-        for (size_t n = 0; n < 2; n++) {
-            if (n == 0) {
 
-                auto LSCoeffs = makeShelf(nastaw, audioProcessor.getSampleRate(), n);
-                updateCoeffs(monoChain.get<0>().coefficients, LSCoeffs);
-            }
-            else if (n == 1) {
-                auto HSCoeffs = makeShelf(nastaw, audioProcessor.getSampleRate(), n);
-                updateCoeffs(monoChain.get<5>().coefficients, HSCoeffs);
+        auto peakCoeffs1 = makePeakFilter1(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs2 = makePeakFilter2(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs3 = makePeakFilter3(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs4 = makePeakFilter4(nastaw, audioProcessor.getSampleRate());
+        updateCoeffs(monoChain.get<1 >().coefficients, peakCoeffs1);
+        updateCoeffs(monoChain.get<2 >().coefficients, peakCoeffs2);
+        updateCoeffs(monoChain.get<3 >().coefficients, peakCoeffs3);
+        updateCoeffs(monoChain.get<4 >().coefficients, peakCoeffs4);
 
-            }
-        }
-        repaint();
+        auto LSCoeffs = makeLowShelf(nastaw, audioProcessor.getSampleRate());
+        auto HSCoeffs = makeHighShelf(nastaw, audioProcessor.getSampleRate());
+                
+        updateCoeffs(monoChain.get<0>().coefficients, LSCoeffs);
+        updateCoeffs(monoChain.get<5>().coefficients, HSCoeffs);
+
+        
     }
+    repaint();
 }
 
 std::vector<juce::Component*> ParametricEQAudioProcessorEditor::wstawElementy()

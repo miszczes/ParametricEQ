@@ -13,6 +13,7 @@
 float beta = 0;
 float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
+
 //==============================================================================
 ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -288,71 +289,81 @@ Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const si
     }
     return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
 }
-
-Wspolczynniki makeShelf(const Nastawy& nastawy, double sampleRate, const size_t index)
+Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate)
 {
-    if (index == 0)
-    {
-        return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate,
+     return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate,
                                                                 nastawy.LowShelfFreq,
                                                                 nastawy.LowShelfQ,
                                                                 juce::Decibels::decibelsToGain(nastawy.LowShelfGain));
+}
 
-    }
-    else if (index == 1)
-    {
-        return juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate,
+Wspolczynniki makePeakFilter1(const Nastawy& nastawy, double sampleRate)
+{
+    Wzory(nastawy.Band1Freq, nastawy.Band1GainToDB, nastawy.Band1BW, nastawy.Band1BWGain, nastawy.Band1GainRef, sampleRate);
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+}
+Wspolczynniki makePeakFilter2(const Nastawy& nastawy, double sampleRate)
+{
+    Wzory(nastawy.Band2Freq, nastawy.Band2GainToDB, nastawy.Band2BW, nastawy.Band2BWGain, nastawy.Band2GainRef, sampleRate);
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+}
+Wspolczynniki makePeakFilter3(const Nastawy& nastawy, double sampleRate)
+{
+    Wzory(nastawy.Band3Freq, nastawy.Band3GainToDB, nastawy.Band3BW, nastawy.Band3BWGain, nastawy.Band3GainRef, sampleRate);
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+}
+Wspolczynniki makePeakFilter4(const Nastawy& nastawy, double sampleRate)
+{
+    Wzory(nastawy.Band4Freq, nastawy.Band4GainToDB, nastawy.Band4BW, nastawy.Band4BWGain, nastawy.Band4GainRef, sampleRate);
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+}
+
+Wspolczynniki makeHighShelf(const Nastawy& nastawy, double sampleRate)
+{
+    return juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate,
                                                                 nastawy.HighShelfFreq,
                                                                 nastawy.HighShelfQ,
                                                                 juce::Decibels::decibelsToGain(nastawy.HighShelfGain));
-    }
-
 }
-
-
-void ParametricEQAudioProcessor::updatePeak(const Nastawy& nastawy, const size_t index)
+void ParametricEQAudioProcessor::updateLowShelf(const Nastawy& nastawy)
 {
-
-    auto& coeffs = makePeakFilter(nastawy, getSampleRate(), index);
-    if (coeffs)
-    {
-        if (index == 0)
-        {
-            updateCoeffs(leftCh.get<1>().coefficients, coeffs);
-            updateCoeffs(rightCh.get<1>().coefficients, coeffs);
-        }
-        else if (index == 1)
-        {
-            updateCoeffs(leftCh.get<2>().coefficients, coeffs);
-            updateCoeffs(rightCh.get<2>().coefficients, coeffs);
-        }
-        else if (index == 2)
-        {
-            updateCoeffs(leftCh.get<3>().coefficients, coeffs);
-            updateCoeffs(rightCh.get<3>().coefficients, coeffs);
-        }
-        else if (index == 3)
-        {
-            updateCoeffs(leftCh.get<4>().coefficients, coeffs);
-            updateCoeffs(rightCh.get<4>().coefficients, coeffs);
-        }
-    }
+    auto LScoeffs = makeLowShelf(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<0>().coefficients, LScoeffs);
+    updateCoeffs(rightCh.get<0>().coefficients, LScoeffs);
 }
-void ParametricEQAudioProcessor::updateShelf(const Nastawy& nastawy, const size_t index)
+
+void ParametricEQAudioProcessor::updatePeak1(const Nastawy& nastawy)
 {
-    auto Scoeffs = makeShelf(nastawy, getSampleRate(), index);
-    if (index == 0)
-    {
-        updateCoeffs(leftCh.get<0>().coefficients, Scoeffs);
-        updateCoeffs(rightCh.get<0>().coefficients, Scoeffs);
-
-    }
-    else if (index == 1)
-    {
-        updateCoeffs(leftCh.get<5>().coefficients, Scoeffs);
-        updateCoeffs(rightCh.get<5>().coefficients, Scoeffs);
-    }
+    auto& coeffs = makePeakFilter1(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<1>().coefficients, coeffs);
+    updateCoeffs(rightCh.get<1>().coefficients, coeffs);
 }
+void ParametricEQAudioProcessor::updatePeak2(const Nastawy& nastawy)
+{
+    auto& coeffs = makePeakFilter2(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<2>().coefficients, coeffs);
+    updateCoeffs(rightCh.get<2>().coefficients, coeffs);
+}
+void ParametricEQAudioProcessor::updatePeak3(const Nastawy& nastawy)
+{
+    auto& coeffs = makePeakFilter3(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<3>().coefficients, coeffs);
+    updateCoeffs(rightCh.get<3>().coefficients, coeffs);
+}
+void ParametricEQAudioProcessor::updatePeak4(const Nastawy& nastawy)
+{
+    auto& coeffs = makePeakFilter4(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<4>().coefficients, coeffs);
+    updateCoeffs(rightCh.get<4>().coefficients, coeffs);
+}
+
+void ParametricEQAudioProcessor::updateHighShelf(const Nastawy& nastawy)
+{
+    auto HScoeffs = makeHighShelf(nastawy, getSampleRate());
+    updateCoeffs(leftCh.get<5>().coefficients, HScoeffs);
+    updateCoeffs(rightCh.get<5>().coefficients, HScoeffs);
+}
+
 
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe)
 {
@@ -362,29 +373,13 @@ void ParametricEQAudioProcessor::updateFilters()
 {
 
     auto nastawy = zbierzNastawy(apvts);
+    updatePeak1(nastawy);
+    updatePeak2(nastawy);
+    updatePeak3(nastawy);
+    updatePeak4(nastawy);
 
-    for (size_t i = 0; i < 4; i++) {
-        if (i == 0)
-            //generujWspolczynniki(getSampleRate(), chainSettings.Band1Freq, chainSettings.Band1GainRef, chainSettings.Band1BW, chainSettings.Band1BWGain, chainSettings.Band1GainToDB, i);
-            updatePeak(nastawy, i);
-        else if (i == 1)
-            //generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
-            updatePeak(nastawy, i);
-        else if (i == 2)
-            //generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
-            updatePeak(nastawy, i);
-        else if (i == 3)
-            //generujWspolczynniki(getSampleRate(), chainSettings.Band2Freq, chainSettings.Band2GainRef, chainSettings.Band2BW, chainSettings.Band2BWGain, chainSettings.Band2GainToDB, i);
-            updatePeak(nastawy, i);
-            
-    }
-    for (size_t n = 0; n < 2; n++)
-    {
-        if (n == 0)
-            updateShelf(nastawy, n);
-        else if (n == 1)
-            updateShelf(nastawy, n);
-    }
+    updateLowShelf(nastawy);
+    updateHighShelf(nastawy);
 
 
 }

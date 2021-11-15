@@ -35,9 +35,16 @@ using Wspolczynniki = Band::CoefficientsPtr;
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe);
 void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate);
 
-Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const size_t index);
+Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate);
 
-Wspolczynniki makeShelf(const Nastawy& nastawy, double sampleRate, const size_t index);
+Wspolczynniki makePeakFilter1(const Nastawy& nastawy, double sampleRate);
+Wspolczynniki makePeakFilter2(const Nastawy& nastawy, double sampleRate);
+Wspolczynniki makePeakFilter3(const Nastawy& nastawy, double sampleRate);
+Wspolczynniki makePeakFilter4(const Nastawy& nastawy, double sampleRate);
+
+Wspolczynniki makeHighShelf(const Nastawy& nastawy, double sampleRate);
+
+
 
 
 
@@ -105,9 +112,15 @@ private:
     };
     // void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
 
-    void updatePeak(const Nastawy& nastawy, const size_t index);
+    void updateLowShelf(const Nastawy& nastawy);
 
-    void updateShelf(const Nastawy& nastawy, const size_t index);
+    void updatePeak1(const Nastawy& nastawy);
+    void updatePeak2(const Nastawy& nastawy);
+    void updatePeak3(const Nastawy& nastawy);
+    void updatePeak4(const Nastawy& nastawy);
+
+    void updateHighShelf(const Nastawy& nastawy);
+    
 
    
 
