@@ -60,7 +60,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         auto textWidthLabel = g.getCurrentFont().getStringWidth(textLabel);
 
         rectLabel.setSize(textWidthLabel + 4, wrs->getTextHeight() + 2);
-        rectLabel.setCentre(bounds.getCentreX(), bounds.getCentreY()+30);
+        rectLabel.setCentre(bounds.getCentreX(), bounds.getCentreY() * 1.5);
 
         g.setColour(Colour(179u, 11u, 0u));
         g.setFont(Font("Arial", 20, Font::bold));

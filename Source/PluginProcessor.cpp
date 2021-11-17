@@ -83,7 +83,7 @@ ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 
     apvts.addParameterListener("Band1 Freq", this);
     apvts.addParameterListener("Band1 Wzmocnienie", this);
-    apvts.addParameterListener("Band1 Bw", this);
+    apvts.addParameterListener("Band1 BW", this);
     apvts.addParameterListener("Band1 BW Gain", this);
     apvts.addParameterListener("Band1 Reference", this);
 
@@ -97,7 +97,7 @@ ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 
     apvts.addParameterListener("Band2 Freq", this);
     apvts.addParameterListener("Band2 Wzmocnienie", this);
-    apvts.addParameterListener("Band2 Bw", this);
+    apvts.addParameterListener("Band2 BW", this);
     apvts.addParameterListener("Band2 BW Gain", this);
     apvts.addParameterListener("Band2 Reference", this);
 
@@ -111,7 +111,7 @@ ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 
     apvts.addParameterListener("Band3 Freq", this);
     apvts.addParameterListener("Band3 Wzmocnienie", this);
-    apvts.addParameterListener("Band3 Bw", this);
+    apvts.addParameterListener("Band3 BW", this);
     apvts.addParameterListener("Band3 BW Gain", this);
     apvts.addParameterListener("Band3 Reference", this);
 
@@ -125,7 +125,7 @@ ParametricEQAudioProcessor::ParametricEQAudioProcessor()
 
     apvts.addParameterListener("Band4 Freq", this);
     apvts.addParameterListener("Band4 Wzmocnienie", this);
-    apvts.addParameterListener("Band4 Bw", this);
+    apvts.addParameterListener("Band4 BW", this);
     apvts.addParameterListener("Band4 BW Gain", this);
     apvts.addParameterListener("Band4 Reference", this);
 
@@ -154,7 +154,7 @@ ParametricEQAudioProcessor::~ParametricEQAudioProcessor()
 
     apvts.removeParameterListener("Band1 Freq", this);
     apvts.removeParameterListener("Band1 Wzmocnienie", this);
-    apvts.removeParameterListener("Band1 Bw", this);
+    apvts.removeParameterListener("Band1 BW", this);
     apvts.removeParameterListener("Band1 BW Gain", this);
     apvts.removeParameterListener("Band1 Reference", this);
 
@@ -162,7 +162,7 @@ ParametricEQAudioProcessor::~ParametricEQAudioProcessor()
 
     apvts.removeParameterListener("Band2 Freq", this);
     apvts.removeParameterListener("Band2 Wzmocnienie", this);
-    apvts.removeParameterListener("Band2 Bw", this);
+    apvts.removeParameterListener("Band2 BW", this);
     apvts.removeParameterListener("Band2 BW Gain", this);
     apvts.removeParameterListener("Band2 Reference", this);
 
@@ -171,7 +171,7 @@ ParametricEQAudioProcessor::~ParametricEQAudioProcessor()
 
     apvts.removeParameterListener("Band3 Freq", this);
     apvts.removeParameterListener("Band3 Wzmocnienie", this);
-    apvts.removeParameterListener("Band3 Bw", this);
+    apvts.removeParameterListener("Band3 BW", this);
     apvts.removeParameterListener("Band3 BW Gain", this);
     apvts.removeParameterListener("Band3 Reference", this);
 
@@ -180,7 +180,7 @@ ParametricEQAudioProcessor::~ParametricEQAudioProcessor()
 
     apvts.removeParameterListener("Band4 Freq", this);
     apvts.removeParameterListener("Band4 Wzmocnienie", this);
-    apvts.removeParameterListener("Band4 Bw", this);
+    apvts.removeParameterListener("Band4 BW", this);
     apvts.removeParameterListener("Band4 BW Gain", this);
     apvts.removeParameterListener("Band4 Reference", this);
 
@@ -630,7 +630,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq",
         "Band1 Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.1f),
         500.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
         "Band1 Wzmocnienie",
