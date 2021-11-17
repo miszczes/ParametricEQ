@@ -49,10 +49,13 @@ Wspolczynniki makeHighShelf(const Nastawy& nastawy, double sampleRate);
 
 
 
+
+
 //==============================================================================
 /**
 */
-class ParametricEQAudioProcessor  : public juce::AudioProcessor
+class ParametricEQAudioProcessor  : public juce::AudioProcessor,
+    juce::AudioProcessorValueTreeState::Listener
 {
 public:
 
@@ -99,8 +102,10 @@ public:
 
 private:
 
-    float beta = 0;
-    float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
+    //float beta = 0;
+    //float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
 
     Mono leftCh, rightCh;

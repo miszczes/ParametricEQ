@@ -12,7 +12,43 @@
 #define PI 3.14159265
 float beta = 0;
 float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
+std::atomic<bool> updateLS;
+std::atomic<float>* LS_F;
+std::atomic<float>* LS_G;
+std::atomic<float>* LS_Q;
 
+std::atomic<bool> updateBand1;
+std::atomic<float>* B1_F0;
+std::atomic<float>* B1_G;
+std::atomic<float>* B1_BW;
+std::atomic<float>* B1_GB;
+std::atomic<float>* B1_G0;
+
+std::atomic<bool> updateBand2;
+std::atomic<float>* B2_F0;
+std::atomic<float>* B2_G;
+std::atomic<float>* B2_BW;
+std::atomic<float>* B2_GB;
+std::atomic<float>* B2_G0;
+
+std::atomic<bool> updateBand3;
+std::atomic<float>* B3_F0;
+std::atomic<float>* B3_G;
+std::atomic<float>* B3_BW;
+std::atomic<float>* B3_GB;
+std::atomic<float>* B3_G0;
+
+std::atomic<bool> updateBand4;
+std::atomic<float>* B4_F0;
+std::atomic<float>* B4_G;
+std::atomic<float>* B4_BW;
+std::atomic<float>* B4_GB;
+std::atomic<float>* B4_G0;
+
+std::atomic<bool> updateHS;
+std::atomic<float>* HS_F;
+std::atomic<float>* HS_G;
+std::atomic<float>* HS_Q;
 
 //==============================================================================
 ParametricEQAudioProcessor::ParametricEQAudioProcessor()
@@ -27,10 +63,132 @@ ParametricEQAudioProcessor::ParametricEQAudioProcessor()
                        )
 #endif
 {
+    updateLS = true;
+
+    LS_F = apvts.getRawParameterValue("LS Freq");
+    LS_G = apvts.getRawParameterValue("LS Wzmocnienie");
+    LS_Q = apvts.getRawParameterValue("LS Q");
+
+    apvts.addParameterListener("LS Freq", this);
+    apvts.addParameterListener("LS Wzmocnienie", this);
+    apvts.addParameterListener("LS Q", this);
+
+    updateBand1 = true;
+
+    B1_F0 = apvts.getRawParameterValue("Band1 Freq");
+    B1_G = apvts.getRawParameterValue("Band1 Wzmocnienie");
+    B1_BW = apvts.getRawParameterValue("Band1 BW");
+    B1_GB = apvts.getRawParameterValue("Band1 BW Gain");
+    B1_G0 = apvts.getRawParameterValue("Band1 Reference");
+
+    apvts.addParameterListener("Band1 Freq", this);
+    apvts.addParameterListener("Band1 Wzmocnienie", this);
+    apvts.addParameterListener("Band1 Bw", this);
+    apvts.addParameterListener("Band1 BW Gain", this);
+    apvts.addParameterListener("Band1 Reference", this);
+
+    updateBand2 = true;
+
+    B2_F0 = apvts.getRawParameterValue("Band2 Freq");
+    B2_G = apvts.getRawParameterValue("Band2 Wzmocnienie");
+    B2_BW = apvts.getRawParameterValue("Band2 BW");
+    B2_GB = apvts.getRawParameterValue("Band2 BW Gain");
+    B2_G0 = apvts.getRawParameterValue("Band2 Reference");
+
+    apvts.addParameterListener("Band2 Freq", this);
+    apvts.addParameterListener("Band2 Wzmocnienie", this);
+    apvts.addParameterListener("Band2 Bw", this);
+    apvts.addParameterListener("Band2 BW Gain", this);
+    apvts.addParameterListener("Band2 Reference", this);
+
+    updateBand3 = true;
+
+    B3_F0 = apvts.getRawParameterValue("Band3 Freq");
+    B3_G = apvts.getRawParameterValue("Band3 Wzmocnienie");
+    B3_BW = apvts.getRawParameterValue("Band3 BW");
+    B3_GB = apvts.getRawParameterValue("Band3 BW Gain");
+    B3_G0 = apvts.getRawParameterValue("Band3 Reference");
+
+    apvts.addParameterListener("Band3 Freq", this);
+    apvts.addParameterListener("Band3 Wzmocnienie", this);
+    apvts.addParameterListener("Band3 Bw", this);
+    apvts.addParameterListener("Band3 BW Gain", this);
+    apvts.addParameterListener("Band3 Reference", this);
+
+    updateBand4 = true;
+
+    B4_F0 = apvts.getRawParameterValue("Band4 Freq");
+    B4_G = apvts.getRawParameterValue("Band4 Wzmocnienie");
+    B4_BW = apvts.getRawParameterValue("Band4 BW");
+    B4_GB = apvts.getRawParameterValue("Band4 BW Gain");
+    B4_G0 = apvts.getRawParameterValue("Band4 Reference");
+
+    apvts.addParameterListener("Band4 Freq", this);
+    apvts.addParameterListener("Band4 Wzmocnienie", this);
+    apvts.addParameterListener("Band4 Bw", this);
+    apvts.addParameterListener("Band4 BW Gain", this);
+    apvts.addParameterListener("Band4 Reference", this);
+
+    updateHS = true;
+
+    HS_F = apvts.getRawParameterValue("HS Freq");
+    HS_G = apvts.getRawParameterValue("HS Wzmocnienie");
+    HS_Q = apvts.getRawParameterValue("HS Q");
+
+    apvts.addParameterListener("HS Freq", this);
+    apvts.addParameterListener("HS Wzmocnienie", this);
+    apvts.addParameterListener("HS Q", this);
+
+
 }
 
 ParametricEQAudioProcessor::~ParametricEQAudioProcessor()
 {
+    updateLS = false;
+
+    apvts.removeParameterListener("LS Freq", this);
+    apvts.removeParameterListener("LS Wzmocnienie", this);
+    apvts.removeParameterListener("LS Q", this);
+
+    updateBand1 = false;
+
+    apvts.removeParameterListener("Band1 Freq", this);
+    apvts.removeParameterListener("Band1 Wzmocnienie", this);
+    apvts.removeParameterListener("Band1 Bw", this);
+    apvts.removeParameterListener("Band1 BW Gain", this);
+    apvts.removeParameterListener("Band1 Reference", this);
+
+    updateBand2 = false;
+
+    apvts.removeParameterListener("Band2 Freq", this);
+    apvts.removeParameterListener("Band2 Wzmocnienie", this);
+    apvts.removeParameterListener("Band2 Bw", this);
+    apvts.removeParameterListener("Band2 BW Gain", this);
+    apvts.removeParameterListener("Band2 Reference", this);
+
+    updateBand3 = false;
+
+
+    apvts.removeParameterListener("Band3 Freq", this);
+    apvts.removeParameterListener("Band3 Wzmocnienie", this);
+    apvts.removeParameterListener("Band3 Bw", this);
+    apvts.removeParameterListener("Band3 BW Gain", this);
+    apvts.removeParameterListener("Band3 Reference", this);
+
+    updateBand4 = false;
+
+
+    apvts.removeParameterListener("Band4 Freq", this);
+    apvts.removeParameterListener("Band4 Wzmocnienie", this);
+    apvts.removeParameterListener("Band4 Bw", this);
+    apvts.removeParameterListener("Band4 BW Gain", this);
+    apvts.removeParameterListener("Band4 Reference", this);
+
+    updateHS = false;
+
+    apvts.removeParameterListener("HS Freq", this);
+    apvts.removeParameterListener("HS Wzmocnienie", this);
+    apvts.removeParameterListener("HS Q", this);
 }
 
 //==============================================================================
@@ -163,7 +321,44 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    updateFilters();
+    //updateFilters();
+
+    if (updateLS)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updateLowShelf(nastawy);
+        updateLS = false;
+    }
+    if (updateBand1)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updatePeak1(nastawy);
+        updateBand1 = false;
+    }
+    if (updateBand2)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updatePeak2(nastawy);
+        updateBand2 = false;
+    }
+    if (updateBand3)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updatePeak3(nastawy);
+        updateBand3 = false;
+    }
+    if (updateBand4)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updatePeak4(nastawy);
+        updateBand4 = false;
+    }
+    if (updateHS)
+    {
+        auto nastawy = zbierzNastawy(apvts);
+        updateHighShelf(nastawy);
+        updateHS = false;
+    }
 
     juce::dsp::AudioBlock<float> block(buffer);
 
@@ -175,6 +370,48 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     leftCh.process(leftContext);
     rightCh.process(rightContext);
+}
+void ParametricEQAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    if (parameterID == "LS Freq" ||
+        parameterID == "LS Wzmocnienie" ||
+        parameterID == "LS Q")
+        updateLS = true;
+
+    if (parameterID == "Band1 Freq" ||
+        parameterID == "Band1 Wzmocnienie" ||
+        parameterID == "Band1 BW" ||
+        parameterID == "Band1 BW Gain" ||
+        parameterID == "Band1 Reference")
+        updateBand1 = true;
+
+    if (parameterID == "Band2 Freq" ||
+        parameterID == "Band2 Wzmocnienie" ||
+        parameterID == "Band2 BW" ||
+        parameterID == "Band2 BW Gain" ||
+        parameterID == "Band2 Reference")
+        updateBand2 = true;
+
+    if (parameterID == "Band3 Freq" ||
+        parameterID == "Band3 Wzmocnienie" ||
+        parameterID == "Band3 BW" ||
+        parameterID == "Band3 BW Gain" ||
+        parameterID == "Band3 Reference")
+        updateBand3 = true;
+
+    if (parameterID == "Band4 Freq" ||
+        parameterID == "Band4 Wzmocnienie" ||
+        parameterID == "Band4 BW" ||
+        parameterID == "Band4 BW Gain" ||
+        parameterID == "Band4 Reference")
+        updateBand4 = true;
+
+    if (parameterID == "HS Freq" ||
+        parameterID == "HS Wzmocnienie" ||
+        parameterID == "HS Q")
+        updateHS = true;
+
+
 }
 
 //==============================================================================
@@ -393,11 +630,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq",
         "Band1 Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         500.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
         "Band1 Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 BW",
         "Band1 BW",
@@ -405,7 +642,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 BW Gain",
         "Band1 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Reference",
         "Band1 Reference",
@@ -414,11 +651,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Freq",
         "Band2 Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         1000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Wzmocnienie",
         "Band2 Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW",
         "Band2 BW",
@@ -426,7 +663,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW Gain",
         "Band2 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Reference",
         "Band2 Reference",
@@ -435,11 +672,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Freq",
         "Band3 Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         3000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Wzmocnienie",
         "Band3 Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 BW",
         "Band3 BW",
@@ -447,7 +684,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 BW Gain",
         "Band3 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Reference",
         "Band3 Reference",
@@ -456,11 +693,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Freq",
         "Band4 Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         6000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Wzmocnienie",
         "Band4 Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 BW",
         "Band4 BW",
@@ -468,7 +705,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 BW Gain",
         "Band4 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Reference",
         "Band4 Reference",
@@ -477,11 +714,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("LS Freq",
         "LS Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("LS Wzmocnienie",
         "LS Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("LS Q",
         "LS Q",
@@ -490,11 +727,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("HS Freq",
         "HS Freq",
-        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .25f),
+        juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
         10000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("HS Wzmocnienie",
         "HS Wzmocnienie",
-        juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+        juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
         0.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("HS Q",
         "HS Q",
@@ -503,6 +740,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 
     return layout;
 }
+
 
 //==============================================================================
 // This creates new instances of the plugin..
