@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+auto red = juce::Colour(179u, 11u, 0u);
 
 CharakterystykaAmplitudowa::CharakterystykaAmplitudowa(ParametricEQAudioProcessor& p) : audioProcessor(p)
 {
@@ -62,9 +63,11 @@ void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(Colours::black);
 
-    auto strefaCharakteryski = getLocalBounds();
-   
-    g.drawImage(background, strefaCharakteryski.toFloat());
+    g.drawImage(tlo, getLocalBounds().toFloat());
+
+    auto strefaCharakteryski = strefaAnalizy();
+    //strefaCharakteryski.removeFromTop(20);
+    
 
     auto w = strefaCharakteryski.getWidth();
 
@@ -121,17 +124,18 @@ void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
         charakterystyka.lineTo(strefaCharakteryski.getX() + i, map(magnitudes[i]));
     }
     g.setColour(Colours::aqua);
-    g.drawRoundedRectangle(strefaCharakteryski.toFloat(), 4.f, 1.f);
+    g.drawRoundedRectangle(strefaRenderu().toFloat(), 4.f, 1.f);
 
     g.setColour(Colours::white);
     g.strokePath(charakterystyka, PathStrokeType(2.f));
-    repaint();
+   
 }
 void CharakterystykaAmplitudowa::resized()
 {
+   // startTimer(60);
     using namespace juce;
-    background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
-    Graphics g(background);
+    tlo = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
+    Graphics g(tlo);
 
     Array<float> czest
     {
@@ -141,25 +145,123 @@ void CharakterystykaAmplitudowa::resized()
         20000
     };
 
-    g.setColour(Colours::darkgrey);
+    auto Rend = strefaAnalizy();
+    auto lewo = Rend.getX();
+    auto prawo = Rend.getRight();
+    auto gora = Rend.getY();
+    auto dol = Rend.getBottom();
+    auto width = Rend.getWidth();
+
+    Array<float> cache;
     for (auto f : czest)
     {
-        auto normX = mapFromLog10(f, 20.f, 20000.f);
-        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
+        auto normaX = mapFromLog10(f, 20.f, 20000.f);
+        cache.add(lewo + width * normaX);
+    }
+
+    g.setColour(Colours::darkgrey);
+    for (auto x : cache)
+    {
+        g.drawVerticalLine(x, gora, dol);
     }
 
     Array<float> gain
     {
-       -24, -12, 0, 12, 24
+       -24.f, -18.f, -12.f, -6.f, 0.f, 6.f, 12.f, 18.f, 24.f
     };
 
     for (auto gl : gain)
     {
-        auto y = jmap(gl, -24.f, 24.f, float(getHeight()), 0.f);
-        g.drawHorizontalLine(y, 0.f, getWidth());
-    }
-}
+        auto y = jmap(gl, -24.f, 24.f, float(dol), float(gora));
+  
+        g.setColour(gl == 0.f ? red : Colours::darkgrey);
+        g.drawHorizontalLine(y, lewo, prawo);
 
+    }
+    g.setColour(Colours::white);
+    const int rozCzcion = 10;
+    g.setFont(rozCzcion);
+
+    for (int i = 0; i < czest.size(); ++i)
+    {
+        auto f = czest[i];
+        auto x = cache[i];
+
+        bool addK = false;
+        String str;
+        if (f > 999.f)
+        {
+            addK = true;
+            f /= 1000.f;
+        }
+        str << f;
+        if (addK)
+            str << "k";
+        str << "Hz";
+
+        auto szerCzcion = g.getCurrentFont().getStringWidth(str);
+
+        Rectangle<int> rect;
+        rect.setSize(szerCzcion, rozCzcion);
+        rect.setCentre(x, 0);
+        rect.setY(1);
+
+        g.drawFittedText(str, rect, juce::Justification::centred, 1);
+    }
+    //const int rozCzcion2 = 15;
+    //g.setFont(rozCzcion2);
+    for (auto gl : gain)
+    {
+        auto y = jmap(gl, -24.f, 24.f, float(dol), float(gora));
+
+        String str;
+        if (gl > 0.f)
+            str << "+";
+        str << gl;
+
+        auto szerCzcion = g.getCurrentFont().getStringWidth(str);
+        Rectangle<int> rect;
+        rect.setSize(szerCzcion, rozCzcion);
+        rect.setX(getWidth() - szerCzcion);
+        rect.setCentre(rect.getCentreX(), y);
+        g.setColour(gl == 0.f ? red : Colours::white);
+
+        g.drawFittedText(str, rect, juce::Justification::centred, 1.f);
+
+        str.clear();
+        if (gl > 0.f)
+            str << "+";
+        str << gl;
+        rect.setSize(szerCzcion, rozCzcion);
+        rect.setX(1);
+        
+        g.setColour(gl == 0.f ? red : Colours::white);
+
+        g.drawFittedText(str, rect, juce::Justification::centred, 1.f);
+
+
+    }
+ 
+}
+juce::Rectangle<int> CharakterystykaAmplitudowa::strefaRenderu()
+{
+    auto bounds = getLocalBounds();
+
+    bounds.removeFromTop(15);
+    bounds.removeFromLeft(20);
+    bounds.removeFromRight(20);
+    bounds.removeFromBottom(5);
+
+    return bounds;
+}
+juce::Rectangle<int> CharakterystykaAmplitudowa::strefaAnalizy()
+{
+    auto bounds = strefaRenderu();
+    bounds.removeFromTop(4);
+    bounds.removeFromBottom(4);
+
+    return bounds;
+}
 void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider)
 {
     using namespace juce;
@@ -169,7 +271,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     g.setColour(Colour(0u,0u,0u));
     g.fillEllipse(bounds);
 
-    g.setColour(Colour(179u, 11u, 0u));
+    g.setColour(red);
     g.drawEllipse(bounds, 5.f);
 
     if (auto* wrs = dynamic_cast<WlasnyRotarySlider*>(&slider))
@@ -212,7 +314,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         rectLabel.setSize(textWidthLabel + 4, wrs->getTextHeight() + 2);
         rectLabel.setCentre(bounds.getCentreX(), bounds.getCentreY() * 1.5);
 
-        g.setColour(Colour(179u, 11u, 0u));
+        g.setColour(red);
         g.setFont(Font("Arial", 20, Font::bold));
         g.drawFittedText(textLabel, rectLabel.toNearestInt(), juce::Justification::verticallyCentred, 1);
     }
@@ -392,6 +494,15 @@ void ParametricEQAudioProcessorEditor::paint(juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(Colours::black);
 
+    g.setFont(15);
+    g.setColour(Colours::white);
+    g.drawFittedText("Niski polkowy", LowShelfQ.getBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("Parametryczny 1", Band1G0.getBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("Parametryczny 2", Band2G0.getBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("Parametryczny 3", Band3G0.getBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("Parametryczny 4", Band4G0.getBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("Wysoki polkowy", HighShelfQ.getBounds(), juce::Justification::centredBottom, 1);
+
 }
 
 void ParametricEQAudioProcessorEditor::resized()
@@ -400,7 +511,9 @@ void ParametricEQAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
-    auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
+
+    auto strefaCharakteryski = bounds.removeFromTop((bounds.getHeight() * 0.33));
+    //strefaCharakteryski.removeFromTop(20);
 
     charakterystykaAmplitudowa.setBounds(strefaCharakteryski);
 
@@ -410,7 +523,7 @@ void ParametricEQAudioProcessorEditor::resized()
     auto ls = bounds.removeFromLeft(bounds.getWidth() * 0.17);
     LowShelfFreq.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
     LowShelfG.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
-    LowShelfQ.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
+    LowShelfQ.setBounds(ls.removeFromTop(bounds.getHeight() * 0.345));
     
     auto band1 = bounds.removeFromLeft(bounds.getWidth() * 0.20);
     Band1f0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));

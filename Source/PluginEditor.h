@@ -11,6 +11,8 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
+
+
 struct LookAndFeel : juce::LookAndFeel_V4
 {
     void drawRotarySlider(juce::Graphics&,
@@ -64,11 +66,16 @@ struct CharakterystykaAmplitudowa : juce::Component, juce::AudioProcessorParamet
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+
 private:
     ParametricEQAudioProcessor& audioProcessor;
     juce::Atomic<bool> parametryZmienione{ false };
     Mono monoChain;
-    juce::Image background;
+    juce::Image tlo;
+
+    juce::Rectangle<int> strefaRenderu();
+    juce::Rectangle<int> strefaAnalizy();
+    
 };
 //==============================================================================
 /**
