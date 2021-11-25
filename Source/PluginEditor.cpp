@@ -326,8 +326,8 @@ void ParametricEQAudioProcessorEditor::resized()
     auto bounds = getLocalBounds();
     auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
 
-    auto reference = bounds.removeFromLeft(bounds.getWidth() * 0.14);
-    Band1G0.setBounds(reference.removeFromBottom(bounds.getHeight() * 0.2));
+    //auto reference = bounds.removeFromLeft(bounds.getWidth() * 0.14);
+    //Band1G0.setBounds(reference.removeFromBottom(bounds.getHeight() * 0.2));
 
     auto ls = bounds.removeFromLeft(bounds.getWidth() * 0.17);
     LowShelfFreq.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
@@ -335,25 +335,25 @@ void ParametricEQAudioProcessorEditor::resized()
     LowShelfQ.setBounds(ls.removeFromTop(bounds.getHeight() * 0.33));
     
     auto band1 = bounds.removeFromLeft(bounds.getWidth() * 0.20);
-    Band1f0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
-    Band1G.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
-    Band1BW.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
-    Band1BG.setBounds(band1.removeFromTop(bounds.getHeight() * 0.25));
-    //Band1G0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
+    Band1f0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
+    Band1G.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
+    Band1BW.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
+    Band1BG.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
+    Band1G0.setBounds(band1.removeFromTop(bounds.getHeight() * 0.2));
 
     auto band2 = bounds.removeFromLeft(bounds.getWidth() * 0.25);
-    Band2f0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
-    Band2G.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
-    Band2BW.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
-    Band2BG.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
-   // Band2G0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
+    Band2f0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
+    Band2G.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
+    Band2BW.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
+    Band2BG.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
+    Band2G0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.2));
 
     auto band3 = bounds.removeFromLeft(bounds.getWidth() * 0.33);
-    Band3f0.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
-    Band3G.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
-    Band3BW.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
-    Band3BG.setBounds(band3.removeFromTop(bounds.getHeight() * 0.25));
-    //Band3G0.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
+    Band3f0.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
+    Band3G.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
+    Band3BW.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
+    Band3BG.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
+    Band3G0.setBounds(band3.removeFromTop(bounds.getHeight() * 0.2));
 
     //auto band2 = bounds.removeFromLeft(bounds.getWidth() * 0.50);
     //Band2f0.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
@@ -362,11 +362,11 @@ void ParametricEQAudioProcessorEditor::resized()
     //Band2BG.setBounds(band2.removeFromTop(bounds.getHeight() * 0.25));
     
     auto band4 = bounds.removeFromLeft(bounds.getWidth() * 0.5);
-    Band4f0.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
-    Band4G.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
-    Band4BW.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
-    Band4BG.setBounds(band4.removeFromTop(bounds.getHeight() * 0.25));
-    // Band4G0.setBounds(bounds.removeFromTop(bounds.getHeight()));
+    Band4f0.setBounds(band4.removeFromTop(bounds.getHeight() * 0.2));
+    Band4G.setBounds(band4.removeFromTop(bounds.getHeight() * 0.2));
+    Band4BW.setBounds(band4.removeFromTop(bounds.getHeight() * 0.2));
+    Band4BG.setBounds(band4.removeFromTop(bounds.getHeight() * 0.2));
+    Band4G0.setBounds(band4.removeFromTop(bounds.getHeight() * 0.2));
 
     HighShelfFreq.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.33));
     HighShelfG.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));

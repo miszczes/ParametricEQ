@@ -260,6 +260,10 @@ void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    leftCh.reset();
+    rightCh.reset();
+
     juce::dsp::ProcessSpec spec;
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = 1;
@@ -267,7 +271,8 @@ void ParametricEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
 
     leftCh.prepare(spec);
     rightCh.prepare(spec);
-    
+
+
     updateFilters();
 
 
@@ -501,31 +506,6 @@ void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate)
     a2 = (1 - beta) / (1 + beta);
 }
 
-Wspolczynniki makePeakFilter(const Nastawy& nastawy, double sampleRate, const size_t index)
-{
-
-    if (sampleRate > 0) {
-
-        if (index == 0)
-        {
-           Wzory(nastawy.Band1Freq, nastawy.Band1GainToDB, nastawy.Band1BW, nastawy.Band1BWGain, nastawy.Band1GainRef, sampleRate);
-        }
-        else if (index == 1)
-        {
-           Wzory(nastawy.Band2Freq, nastawy.Band2GainToDB, nastawy.Band2BW, nastawy.Band2BWGain, nastawy.Band2GainRef, sampleRate);
-        }
-        else if (index == 2)
-        {
-            Wzory(nastawy.Band3Freq, nastawy.Band3GainToDB, nastawy.Band3BW, nastawy.Band3BWGain, nastawy.Band3GainRef, sampleRate);
-        }
-        else if (index == 3)
-        {
-            Wzory(nastawy.Band4Freq, nastawy.Band4GainToDB, nastawy.Band4BW, nastawy.Band4BWGain, nastawy.Band4GainRef, sampleRate);
-        }
-
-    }
-    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
-}
 Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate)
 {
      return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate,
