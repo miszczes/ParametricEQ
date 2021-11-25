@@ -9,6 +9,156 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+CharakterystykaAmplitudowa::CharakterystykaAmplitudowa(ParametricEQAudioProcessor& p) : audioProcessor(p)
+{
+    const auto& params = audioProcessor.getParameters();
+    for (auto param : params)
+    {
+        param->addListener(this);
+    }
+    startTimer(60);
+
+}
+CharakterystykaAmplitudowa::~CharakterystykaAmplitudowa()
+{
+    const auto& params = audioProcessor.getParameters();
+    for (auto param : params)
+    {
+        param->removeListener(this);
+    }
+}
+void CharakterystykaAmplitudowa::parameterValueChanged(int parameterIndex, float newValue)
+{
+    parametryZmienione.set(true);
+}
+void CharakterystykaAmplitudowa::timerCallback()
+{
+    if (parametryZmienione.compareAndSetBool(false, true))
+    {
+        auto nastaw = zbierzNastawy(audioProcessor.apvts);
+
+        auto peakCoeffs1 = makePeakFilter1(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs2 = makePeakFilter2(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs3 = makePeakFilter3(nastaw, audioProcessor.getSampleRate());
+        auto peakCoeffs4 = makePeakFilter4(nastaw, audioProcessor.getSampleRate());
+        updateCoeffs(monoChain.get<1 >().coefficients, peakCoeffs1);
+        updateCoeffs(monoChain.get<2 >().coefficients, peakCoeffs2);
+        updateCoeffs(monoChain.get<3 >().coefficients, peakCoeffs3);
+        updateCoeffs(monoChain.get<4 >().coefficients, peakCoeffs4);
+
+        auto LSCoeffs = makeLowShelf(nastaw, audioProcessor.getSampleRate());
+        auto HSCoeffs = makeHighShelf(nastaw, audioProcessor.getSampleRate());
+
+        updateCoeffs(monoChain.get<0>().coefficients, LSCoeffs);
+        updateCoeffs(monoChain.get<5>().coefficients, HSCoeffs);
+
+
+    }
+    repaint();
+}
+void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
+{
+    using namespace juce;
+    // (Our component is opaque, so we must completely fill the background with a solid colour)
+    g.fillAll(Colours::black);
+
+    auto strefaCharakteryski = getLocalBounds();
+   
+    g.drawImage(background, strefaCharakteryski.toFloat());
+
+    auto w = strefaCharakteryski.getWidth();
+
+    auto& LowShelf = monoChain.get<0>();
+    auto& band1 = monoChain.get<1>();
+    auto& band2 = monoChain.get<2>();
+    auto& band3 = monoChain.get<3>();
+    auto& band4 = monoChain.get<4>();
+    auto& HighShelf = monoChain.get<5>();
+
+    auto sampleRate = audioProcessor.getSampleRate();
+
+    std::vector<double> magnitudes;
+
+    magnitudes.resize(w);
+
+    for (int i = 0; i < w; i++)
+    {
+        double mag = 1.f;
+        auto freq = mapToLog10(double(i) / double(w), 20.0, 20000.0);
+
+        if (!monoChain.isBypassed<0>())
+            mag *= LowShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<1>())
+            mag *= band1.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<2>())
+            mag *= band2.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<3>())
+            mag *= band3.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<4>())
+            mag *= band4.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<5>())
+            mag *= HighShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+
+
+        magnitudes[i] = Decibels::gainToDecibels(mag);
+
+    }
+
+    Path charakterystyka;
+
+    const double outMin = strefaCharakteryski.getBottom();
+    const double outMax = strefaCharakteryski.getY();
+
+    auto map = [outMin, outMax](double input)
+    {
+        return jmap(input, -24.0, 24.0, outMin, outMax);
+    };
+
+    charakterystyka.startNewSubPath(strefaCharakteryski.getX(), map(magnitudes.front()));
+
+    for (size_t i = 1; i < magnitudes.size(); i++)
+    {
+        charakterystyka.lineTo(strefaCharakteryski.getX() + i, map(magnitudes[i]));
+    }
+    g.setColour(Colours::aqua);
+    g.drawRoundedRectangle(strefaCharakteryski.toFloat(), 4.f, 1.f);
+
+    g.setColour(Colours::white);
+    g.strokePath(charakterystyka, PathStrokeType(2.f));
+    repaint();
+}
+void CharakterystykaAmplitudowa::resized()
+{
+    using namespace juce;
+    background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
+    Graphics g(background);
+
+    Array<float> czest
+    {
+        20, 30, 40, 50, 100,
+        200, 300, 400, 500, 1000,
+        2000, 3000, 4000, 5000, 10000,
+        20000
+    };
+
+    g.setColour(Colours::darkgrey);
+    for (auto f : czest)
+    {
+        auto normX = mapFromLog10(f, 20.f, 20000.f);
+        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
+    }
+
+    Array<float> gain
+    {
+       -24, -12, 0, 12, 24
+    };
+
+    for (auto gl : gain)
+    {
+        auto y = jmap(gl, -24.f, 24.f, float(getHeight()), 0.f);
+        g.drawHorizontalLine(y, 0.f, getWidth());
+    }
+}
 
 void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider)
 {
@@ -185,6 +335,7 @@ ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQ
     HighShelfQ(*audioProcessor.apvts.getParameter("HS Q"), "", "Q"),
     HighShelfG(*audioProcessor.apvts.getParameter("HS Wzmocnienie"), "dB", "Gain"),
 
+    charakterystykaAmplitudowa(audioProcessor),
 
     Band1f0Attachment(audioProcessor.apvts, "Band1 Freq",Band1f0),
     Band1GAttachment(audioProcessor.apvts, "Band1 Wzmocnienie", Band1G),
@@ -223,12 +374,6 @@ ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQ
         addAndMakeVisible(elem);
     }
 
-    const auto& params = audioProcessor.getParameters();
-    for (auto param : params) 
-    {
-        param->addListener(this);
-    }
-    startTimer(60);
     
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -237,85 +382,16 @@ ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQ
 
 ParametricEQAudioProcessorEditor::~ParametricEQAudioProcessorEditor()
 {
-    const auto& params = audioProcessor.getParameters();
-    for (auto param : params)
-    {
-        param->removeListener(this);
-    }
+    
 }
 
 //==============================================================================
-void ParametricEQAudioProcessorEditor::paint (juce::Graphics& g)
+void ParametricEQAudioProcessorEditor::paint(juce::Graphics& g)
 {
     using namespace juce;
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (Colours::black);
+    g.fillAll(Colours::black);
 
-    auto bounds = getLocalBounds();
-    auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
-
-    g.drawImage(background, strefaCharakteryski.toFloat());
-
-    auto w = strefaCharakteryski.getWidth();
-
-    auto& LowShelf = monoChain.get<0>();
-    auto& band1 = monoChain.get<1>();
-    auto& band2 = monoChain.get<2>();
-    auto& band3 = monoChain.get<3>();
-    auto& band4 = monoChain.get<4>();
-    auto& HighShelf = monoChain.get<5>();
-
-    auto sampleRate = audioProcessor.getSampleRate();
-
-    std::vector<double> magnitudes;
-
-    magnitudes.resize(w);
-
-    for (int i = 0; i < w; i++)
-    {
-        double mag = 1.f;
-        auto freq = mapToLog10(double(i) / double(w), 20.0, 20000.0);
-
-        if (!monoChain.isBypassed<0>())
-            mag *= LowShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!monoChain.isBypassed<1>())
-            mag *= band1.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!monoChain.isBypassed<2>())
-            mag *= band2.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!monoChain.isBypassed<3>())
-            mag *= band3.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!monoChain.isBypassed<4>())
-            mag *= band4.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!monoChain.isBypassed<5>())
-            mag *= HighShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
-            
-
-        magnitudes[i] = Decibels::gainToDecibels(mag);
-
-    }
-
-    Path charakterystyka;
-
-    const double outMin = strefaCharakteryski.getBottom();
-    const double outMax = strefaCharakteryski.getY();
-
-    auto map = [outMin, outMax](double input)
-    {
-        return jmap(input, -24.0, 24.0, outMin, outMax);
-    };
-
-    charakterystyka.startNewSubPath(strefaCharakteryski.getX(), map(magnitudes.front()));
-
-    for (size_t i = 1; i < magnitudes.size(); i++)
-    {
-        charakterystyka.lineTo(strefaCharakteryski.getX() + i, map(magnitudes[i]));
-    }
-    g.setColour(Colours::aqua);
-    g.drawRoundedRectangle(strefaCharakteryski.toFloat(), 4.f, 1.f);
-
-    g.setColour(Colours::white);
-    g.strokePath(charakterystyka, PathStrokeType(2.f));
-    repaint();
 }
 
 void ParametricEQAudioProcessorEditor::resized()
@@ -325,6 +401,8 @@ void ParametricEQAudioProcessorEditor::resized()
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
     auto strefaCharakteryski = bounds.removeFromTop(bounds.getHeight() * 0.33);
+
+    charakterystykaAmplitudowa.setBounds(strefaCharakteryski);
 
     //auto reference = bounds.removeFromLeft(bounds.getWidth() * 0.14);
     //Band1G0.setBounds(reference.removeFromBottom(bounds.getHeight() * 0.2));
@@ -373,65 +451,10 @@ void ParametricEQAudioProcessorEditor::resized()
     HighShelfQ.setBounds(bounds.removeFromTop(bounds.getHeight()));
    
 
-    background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
-    Graphics g(background);
 
-    Array<float> czest
-    {
-        20, 30, 40, 50, 100,
-        200, 300, 400, 500, 1000,
-        2000, 3000, 4000, 5000, 10000,
-        20000
-    };
-
-    g.setColour(Colours::darkgrey);
-    for (auto f : czest)
-    {
-        auto normX = mapFromLog10(f, 20.f, 20000.f);
-        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
-    }
-
-    Array<float> gain
-    {
-         -12, 0, 12
-    };
-
-    for (auto gl : gain)
-    {
-        auto y = jmap(gl, -24.f, 24.f, float(getHeight()), 0.f);
-        g.drawHorizontalLine(y, 0.f, getWidth());
-    }
 }
     
-void ParametricEQAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
-{
-    parametryZmienione.set(true);
-}
-void ParametricEQAudioProcessorEditor::timerCallback()
-{
-    if (parametryZmienione.compareAndSetBool(false, true))
-    {
-        auto nastaw = zbierzNastawy(audioProcessor.apvts);
 
-        auto peakCoeffs1 = makePeakFilter1(nastaw, audioProcessor.getSampleRate());
-        auto peakCoeffs2 = makePeakFilter2(nastaw, audioProcessor.getSampleRate());
-        auto peakCoeffs3 = makePeakFilter3(nastaw, audioProcessor.getSampleRate());
-        auto peakCoeffs4 = makePeakFilter4(nastaw, audioProcessor.getSampleRate());
-        updateCoeffs(monoChain.get<1 >().coefficients, peakCoeffs1);
-        updateCoeffs(monoChain.get<2 >().coefficients, peakCoeffs2);
-        updateCoeffs(monoChain.get<3 >().coefficients, peakCoeffs3);
-        updateCoeffs(monoChain.get<4 >().coefficients, peakCoeffs4);
-
-        auto LSCoeffs = makeLowShelf(nastaw, audioProcessor.getSampleRate());
-        auto HSCoeffs = makeHighShelf(nastaw, audioProcessor.getSampleRate());
-                
-        updateCoeffs(monoChain.get<0>().coefficients, LSCoeffs);
-        updateCoeffs(monoChain.get<5>().coefficients, HSCoeffs);
-
-        
-    }
-    repaint();
-}
 
 std::vector<juce::Component*> ParametricEQAudioProcessorEditor::wstawElementy()
 {
@@ -464,6 +487,8 @@ std::vector<juce::Component*> ParametricEQAudioProcessorEditor::wstawElementy()
 
         &HighShelfFreq,
         &HighShelfQ,
-        &HighShelfG
+        &HighShelfG,
+
+        &charakterystykaAmplitudowa
     };
 }
