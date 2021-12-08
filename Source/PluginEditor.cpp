@@ -277,23 +277,35 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     if (auto* wrs = dynamic_cast<WlasnyRotarySlider*>(&slider))
     {
         auto center = bounds.getCentre();
-        Path p;
-
-        Rectangle<float> rect;
-        rect.setLeft(center.getX() - 2);
-        rect.setRight(center.getX() + 2);
-        rect.setTop(bounds.getY());
-        rect.setBottom(center.getY() - 30);
-
-        p.addRoundedRectangle(rect, 2.f);
+        Path p1;
+        Path p2;
         jassert(rotaryStartAngle < rotaryEndAngle);
 
         auto sliderKatRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);
 
-        p.applyTransform(AffineTransform().rotated(sliderKatRad, center.getX(), center.getY()));
 
-        g.fillPath(p);
+        Rectangle<float> rect2;
+        rect2.setLeft(center.getX() - 2);
+        rect2.setRight(center.getX() + 4);
+        rect2.setTop(bounds.getY());
+        rect2.setBottom(center.getY() - 14);
 
+        p2.addRoundedRectangle(rect2, 3.f);
+        p2.applyTransform(AffineTransform().rotated(sliderKatRad, center.getX(), center.getY()));
+        g.fillPath(p2);
+
+        Rectangle<float> rect;
+        rect.setLeft(center.getX() + 4);
+        rect.setRight(center.getX() + 10);
+        rect.setTop(bounds.getY() - 5);
+        rect.setBottom(center.getY() - 14);
+        p1.addRoundedRectangle(rect, 2.f);
+        g.setColour(Colours::black);
+
+        p1.applyTransform(AffineTransform().rotated(sliderKatRad, center.getX(), center.getY()));
+        g.fillPath(p1);
+        
+        
         g.setFont(wrs->getTextHeight());
         auto text = wrs->getDisplayString();
         auto textWidth = g.getCurrentFont().getStringWidth(text);

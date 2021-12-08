@@ -611,7 +611,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Freq",
         "Band1 Freq",
         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.1f),
-        500.f));
+        200.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Wzmocnienie",
         "Band1 Wzmocnienie",
         juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
@@ -622,7 +622,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 BW Gain",
         "Band1 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
+        juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band1 Reference",
         "Band1 Reference",
@@ -632,7 +632,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Freq",
         "Band2 Freq",
         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
-        1000.f));
+        500.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Wzmocnienie",
         "Band2 Wzmocnienie",
         juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
@@ -643,7 +643,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 BW Gain",
         "Band2 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
+        juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band2 Reference",
         "Band2 Reference",
@@ -653,7 +653,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Freq",
         "Band3 Freq",
         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
-        3000.f));
+        2000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Wzmocnienie",
         "Band3 Wzmocnienie",
         juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
@@ -664,7 +664,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 BW Gain",
         "Band3 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
+        juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band3 Reference",
         "Band3 Reference",
@@ -674,7 +674,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Freq",
         "Band4 Freq",
         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, .10f),
-        6000.f));
+        5000.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Wzmocnienie",
         "Band4 Wzmocnienie",
         juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f),
@@ -685,7 +685,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout
         100.f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 BW Gain",
         "Band4 BW Gain",
-        juce::NormalisableRange<float>(0.5f, 12.f, 0.1f, 1.f),
+        juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f),
         0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("Band4 Reference",
         "Band4 Reference",
