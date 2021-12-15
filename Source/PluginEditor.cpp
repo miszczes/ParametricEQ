@@ -10,7 +10,7 @@
 #include "PluginEditor.h"
 auto red = juce::Colour(179u, 11u, 0u);
 
-CharakterystykaAmplitudowa::CharakterystykaAmplitudowa(ParametricEQAudioProcessor& p) : audioProcessor(p)
+CharakterystykaAmplitudowa::CharakterystykaAmplitudowa(ParametricEQAudioProcessor& p) : audioProcessor(p) //listener aby rysować charaktersytke tylko gdy zmieniany jest parametr
 {
     const auto& params = audioProcessor.getParameters();
     for (auto param : params)
@@ -34,7 +34,7 @@ void CharakterystykaAmplitudowa::parameterValueChanged(int parameterIndex, float
 }
 void CharakterystykaAmplitudowa::timerCallback()
 {
-    if (parametryZmienione.compareAndSetBool(false, true))
+    if (parametryZmienione.compareAndSetBool(false, true)) //jesli zmieniony zostanie parametr nastepuje update lancucha filtrow
     {
         auto nastaw = zbierzNastawy(audioProcessor.apvts);
 
@@ -69,7 +69,7 @@ void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
     //strefaCharakteryski.removeFromTop(20);
     
 
-    auto w = strefaCharakteryski.getWidth();
+    auto w = strefaCharakteryski.getWidth();                 // na podstawie lancucha filtrow pobierana jest wartosc wskaznika 
 
     auto& LowShelf = monoChain.get<0>();
     auto& band1 = monoChain.get<1>();
@@ -88,8 +88,8 @@ void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
     {
         double mag = 1.f;
         auto freq = mapToLog10(double(i) / double(w), 20.0, 20000.0);
-
-        if (!monoChain.isBypassed<0>())
+         
+        if (!monoChain.isBypassed<0>())                                                    // za pomocą wskaznika wyznaczana jest amplituda
             mag *= LowShelf.coefficients->getMagnitudeForFrequency(freq, sampleRate);
         if (!monoChain.isBypassed<1>())
             mag *= band1.coefficients->getMagnitudeForFrequency(freq, sampleRate);
@@ -114,7 +114,7 @@ void CharakterystykaAmplitudowa::paint(juce::Graphics& g)
 
     auto map = [outMin, outMax](double input)
     {
-        return jmap(input, -24.0, 24.0, outMin, outMax);
+        return jmap(input, -24.0, 24.0, outMin, outMax); // amplituda ta mapowana jest w zadanym obszarze w ktorym rysowanan jest charakterystyka
     };
 
     charakterystyka.startNewSubPath(strefaCharakteryski.getX(), map(magnitudes.front()));
@@ -137,7 +137,7 @@ void CharakterystykaAmplitudowa::resized()
     tlo = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
     Graphics g(tlo);
 
-    Array<float> czest
+    Array<float> czest  //wyrysowanie osi i linii grafu
     {
         20, 30, 40, 50, 100,
         200, 300, 400, 500, 1000,
@@ -274,7 +274,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     g.setColour(red);
     g.drawEllipse(bounds, 5.f);
 
-    if (auto* wrs = dynamic_cast<WlasnyRotarySlider*>(&slider))
+    if (auto* wrs = dynamic_cast<WlasnyRotarySlider*>(&slider)) //rysowanie wlasnego slidera
     {
         auto center = bounds.getCentre();
         Path p1;
@@ -415,7 +415,7 @@ juce::String WlasnyRotarySlider::displayLabel() const
     return label;
 }
 //==============================================================================
-ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQAudioProcessor& p)
+ParametricEQAudioProcessorEditor::ParametricEQAudioProcessorEditor (ParametricEQAudioProcessor& p) //pobranie wartosci parametrow by wyrysowac je w GUI
     : AudioProcessorEditor (&p), audioProcessor (p),
     Band1f0(*audioProcessor.apvts.getParameter("Band1 Freq"), "Hz", "f0"),
     Band1G(*audioProcessor.apvts.getParameter("Band1 Wzmocnienie"), "dB", "Gain"),
@@ -517,7 +517,7 @@ void ParametricEQAudioProcessorEditor::paint(juce::Graphics& g)
 
 }
 
-void ParametricEQAudioProcessorEditor::resized()
+void ParametricEQAudioProcessorEditor::resized() //wyznaczanie granic dla kazdego ze sliderow
 {
     using namespace juce;
     // This is generally where you'll want to lay out the positions of any

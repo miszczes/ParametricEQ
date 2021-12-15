@@ -328,6 +328,8 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     //updateFilters();
 
+    //wyznaczanie wspolczynnikow pod warunkiem, ze listener zwroci watrosc true w parameterChanged
+
     if (updateLS)
     {
         auto nastawy = zbierzNastawy(apvts);
@@ -365,6 +367,7 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         updateHS = false;
     }
 
+    //zebranie bufora i przetworzenie go przez lancuch filtrow  leftCh i rightCH
     juce::dsp::AudioBlock<float> block(buffer);
 
     auto leftBlock = block.getSingleChannelBlock(0);
@@ -376,7 +379,7 @@ void ParametricEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     leftCh.process(leftContext);
     rightCh.process(rightContext);
 }
-void ParametricEQAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+void ParametricEQAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue) //Sprwdzani czy parametr zosta³ zmieniony
 {
     if (parameterID == "LS Freq" ||
         parameterID == "LS Wzmocnienie" ||
@@ -454,7 +457,7 @@ void ParametricEQAudioProcessor::setStateInformation (const void* data, int size
         updateFilters();
     }
 }
-Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts)
+Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts) //nadanie zmiennym ze struct Nastawy wartosci parametrow  z ktorymi zwiazane sa 'potecjometry'
 {
     Nastawy ustawienia;
 
@@ -493,7 +496,7 @@ Nastawy zbierzNastawy(juce::AudioProcessorValueTreeState& apvts)
 
     return ustawienia;
 }
-void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate)
+void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate) //wyznacznoe wzory
 {
 
     beta = tan(BW / 2 * PI / (sampleRate / 2)) * sqrt(abs(pow(pow(10, BG / 20), 2) - pow(pow(10, G0 / 20), 2))) / sqrt(abs(pow(pow(10, G / 20), 2) - pow(pow(10, BG / 20), 2)));
@@ -506,7 +509,7 @@ void Wzory(float f0, float G, float BW, float BG, float G0, float sampleRate)
     a2 = (1 - beta) / (1 + beta);
 }
 
-Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate)
+Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate) //wyliczanie wspolczynnikow przy pomocy metody oferowanej przez JUCE
 {
      return juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate,
                                                                 nastawy.LowShelfFreq,
@@ -516,8 +519,8 @@ Wspolczynniki makeLowShelf(const Nastawy& nastawy, double sampleRate)
 
 Wspolczynniki makePeakFilter1(const Nastawy& nastawy, double sampleRate)
 {
-    Wzory(nastawy.Band1Freq, nastawy.Band1GainToDB, nastawy.Band1BW, nastawy.Band1BWGain, nastawy.Band1GainRef, sampleRate);
-    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+    Wzory(nastawy.Band1Freq, nastawy.Band1GainToDB, nastawy.Band1BW, nastawy.Band1BWGain, nastawy.Band1GainRef, sampleRate); //nadanie zmiennym b0, b1, b2, a0, a1, a2 wartosci zwiazanych z parametrem
+    return new juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2); //zwrocenie wskaznika ktorym poslugiwac bedzie sie lancuch filtrow
 }
 Wspolczynniki makePeakFilter2(const Nastawy& nastawy, double sampleRate)
 {
@@ -545,7 +548,7 @@ Wspolczynniki makeHighShelf(const Nastawy& nastawy, double sampleRate)
 void ParametricEQAudioProcessor::updateLowShelf(const Nastawy& nastawy)
 {
     auto LScoeffs = makeLowShelf(nastawy, getSampleRate());
-    updateCoeffs(leftCh.get<0>().coefficients, LScoeffs);
+    updateCoeffs(leftCh.get<0>().coefficients, LScoeffs); //wyslanie wskaznika do odpowiedniej istancji filtra w lancuchu filtrow
     updateCoeffs(rightCh.get<0>().coefficients, LScoeffs);
 }
 
@@ -603,8 +606,8 @@ void ParametricEQAudioProcessor::updateFilters()
 
 
 
-juce::AudioProcessorValueTreeState::ParameterLayout
-    ParametricEQAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout 
+    ParametricEQAudioProcessor::createParameterLayout() //inicjalizacja wszystkich parametrow dostepnych we wtyczce
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 

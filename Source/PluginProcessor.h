@@ -11,7 +11,7 @@
 #include <JuceHeader.h>
 
 
-struct Nastawy
+struct Nastawy 
 {
     float Band1Freq{ 0 }, Band1GainToDB{ 0 }, Band1BW{ 1.f }, Band1BWGain{ 0 }, Band1GainRef{ 0 };
     float Band2Freq{ 0 }, Band2GainToDB{ 0 }, Band2BW{ 1.f }, Band2BWGain{ 0 }, Band2GainRef{ 0 };
@@ -29,7 +29,7 @@ using LowShelf = Band;
 
 using HighShelf = Band;
 
-using Mono = juce::dsp::ProcessorChain<LowShelf, Band, Band, Band, Band, HighShelf>;
+using Mono = juce::dsp::ProcessorChain<LowShelf, Band, Band, Band, Band, HighShelf>; //istancja lancucha filtrow dla jednego kanalu
 
 using Wspolczynniki = Band::CoefficientsPtr;
 void updateCoeffs(Wspolczynniki& old, const Wspolczynniki& nowe);
@@ -108,13 +108,8 @@ private:
     //float b0{ 0 }, b1{ 0 }, b2{ 0 }, a0{ 1.f }, a1{ 0 }, a2{ 0 };
 
 
-    Mono leftCh, rightCh;
+    Mono leftCh, rightCh; //rozdzial lancucha filtrow mono na stereo
 
-    enum chainPos
-    {
-        Band1,
-        Band2
-    };
     // void generujWspolczynniki(double fs, float f0, float G0, float Bf, float GB, float G, const size_t index);
 
     void updateLowShelf(const Nastawy& nastawy);

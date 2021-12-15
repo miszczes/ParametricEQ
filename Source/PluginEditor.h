@@ -11,7 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-
+//inicjalizacja wszystkich komponentow wykorzystanych podczas rysowania GUI
 
 struct LookAndFeel : juce::LookAndFeel_V4
 {
@@ -23,7 +23,7 @@ struct LookAndFeel : juce::LookAndFeel_V4
         juce::Slider&) override;
 };
 
-struct WlasnyRotarySlider : juce::Slider
+struct WlasnyRotarySlider : juce::Slider //inicjalizacja wszelkich metod istntych dla rysowania wlasnych rotary sliderow
 {
     WlasnyRotarySlider(juce::RangedAudioParameter &rap, const juce::String& unit, const juce::String& sliderLabel) : juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
                                                                                     juce::Slider::TextEntryBoxPosition::NoTextBox),
@@ -52,7 +52,7 @@ private:
     juce::String label;
 };
 
-struct CharakterystykaAmplitudowa : juce::Component, juce::AudioProcessorParameter::Listener, juce::Timer
+struct CharakterystykaAmplitudowa : juce::Component, juce::AudioProcessorParameter::Listener, juce::Timer //inicjalizacja wszystkich metod istotnych z punktu widzenia rysowania charakterystki amplitudowej
 {
     CharakterystykaAmplitudowa(ParametricEQAudioProcessor&);
     ~CharakterystykaAmplitudowa();
@@ -70,7 +70,7 @@ struct CharakterystykaAmplitudowa : juce::Component, juce::AudioProcessorParamet
 private:
     ParametricEQAudioProcessor& audioProcessor;
     juce::Atomic<bool> parametryZmienione{ false };
-    Mono monoChain;
+    Mono monoChain;                                             // wlasna instancja lancucha filtrow potrzebna by na podstawie jej transmitancji wyznaczyc charatkerystyke amplitudowa 
     juce::Image tlo;
 
     juce::Rectangle<int> strefaRenderu();
